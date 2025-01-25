@@ -1,40 +1,51 @@
 require('dotenv').config();
 const express = require('express');
-const bodyParser = require('body-parser');
+const line = require('@line/bot-sdk');
 
 const config = {
     channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
     channelSecret: process.env.CHANNEL_SECRET,
 };
-// console.log(config);
 
+if (!config.channelAccessToken || !config.channelSecret) {
+    throw new Error("Missing CHANNEL_ACCESS_TOKEN or CHANNEL_SECRET in .env file");
+}
+
+const client = new line.Client(config);
 const app = express();
-app.use(bodyParser.json());
 
-// เส้นทางพื้นฐาน (Route)
+app.use(line.middleware(config));
+
 app.get('/', (req, res) => {
-    res.send('Hello, LINE OA!');
+    res.send('Hello, LINE OA is running!');
 });
 
 app.post('/webhook', (req, res) => {
-    const events = req.body.events;
+    if (!req.body.events || req.body.events.length === 0) {
+        return res.status(200).send('No events');
+    }
 
-    events.forEach((event) => {
-        if (event.type === 'message' && event.message.type === 'text') {
-            const userMessage = event.message.text;
-
-            // ตอบกลับข้อความ
-            client.replyMessage(event.replyToken, {
-                type: 'text',
-                text: `คุณพิมพ์ว่า: ${userMessage}`,
-            });
-        }
-    });
-
-    res.status(200).send('OK');
+    Promise.all(req.body.events.map(handleEvent))
+        .then((result) => res.status(200).json(result))
+        .catch((err) => {
+            console.error('Error handling events:', err);
+            res.status(500).send('Internal Server Error');
+        });
 });
 
-// เริ่มเซิร์ฟเวอร์
+function handleEvent(event) {
+    console.log('Received event:', event);
+
+    if (event.type === 'message' && event.message.type === 'text') {
+        return client.replyMessage(event.replyToken, {
+            type: 'text',
+            text: `คุณพิมพ์ว่า: ${event.message.text}`,
+        });
+    }
+
+    return Promise.resolve(null);
+}
+
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
