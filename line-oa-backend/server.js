@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const line = require('@line/bot-sdk');
 
+
 const config = {
     channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
     channelSecret: process.env.CHANNEL_SECRET,
@@ -14,16 +15,18 @@ if (!config.channelAccessToken || !config.channelSecret) {
 const client = new line.Client(config);
 const app = express();
 
-app.use(line.middleware(config));
 
 app.get('/', (req, res) => {
     res.send('Hello, LINE OA is running!');
 });
 
-app.post('/webhook', (req, res) => {
+app.post('/webhook',line.middleware(config), (req, res) => {
+    console.log('Headers:', req.headers);
+    console.log('Body:', req.body);
     if (!req.body.events || req.body.events.length === 0) {
         return res.status(200).send('No events');
     }
+    
 
     Promise.all(req.body.events.map(handleEvent))
         .then((result) => res.status(200).json(result))
@@ -32,6 +35,7 @@ app.post('/webhook', (req, res) => {
             res.status(500).send('Internal Server Error');
         });
 });
+
 
 function handleEvent(event) {
     console.log('Received event:', event);
@@ -47,6 +51,7 @@ function handleEvent(event) {
 }
 
 const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log('Server is running on port 3000');
 });
+
