@@ -17,7 +17,7 @@ services:
     container_name: db
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: test
+      MYSQL_DATABASE: Linebot
     ports:
       - "3306:3306"
     volumes:
