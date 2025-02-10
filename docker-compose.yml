@@ -6,11 +6,15 @@ services:
   #   ports:
   #     - "5173:5173"
 
-  # node-server:
-  #   container_name: node
-  #   build: .
-  #   ports:
-  #     - "8000:8000"
+  node-server:
+    container_name: node-server
+    build: ./line-oa-backend  # หรือเปลี่ยน path ให้ถูกต้องถ้าไฟล์ Dockerfile อยู่ที่อื่น
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    networks:
+      - app-network
 
   db:
     image: mysql:latest
@@ -22,6 +26,8 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+    networks:
+      - app-network
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
@@ -35,6 +41,12 @@ services:
       - "8080:80"
     depends_on:
       - db
+    networks:
+      - app-network
 
 volumes:
   db_data:
+
+networks:
+  app-network:
+    driver: bridge

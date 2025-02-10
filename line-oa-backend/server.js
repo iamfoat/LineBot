@@ -1,8 +1,12 @@
 require('dotenv').config();
 const express = require('express');
-const db = require('./db')
+const app = express();
 const line = require('@line/bot-sdk');
+const db = require('./db');
+const productRoutes = require('./routes/ProductRoutes');
 
+app.use(express.json());
+app.use('/api/products', productRoutes);
 
 const config = {
     channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
@@ -14,7 +18,7 @@ if (!config.channelAccessToken || !config.channelSecret) {
 }
 
 const client = new line.Client(config);
-const app = express();
+
 
 
 app.get('/', (req, res) => {
@@ -28,7 +32,6 @@ app.post('/webhook',line.middleware(config), (req, res) => {
         return res.status(200).send('No events');
     }
     
-
     Promise.all(req.body.events.map(handleEvent))
         .then((result) => res.status(200).json(result))
         .catch((err) => {
@@ -51,14 +54,20 @@ function handleEvent(event) {
     return Promise.resolve(null);
 }
 
+
 (async () => {
     try {
-        const [rows] = await db.query('SHOW TABLES;'); // Query ตารางในฐานข้อมูล
-        console.log('Tables:', rows);
+
+        const [rows] = await db.query('SHOW TABLES;');
+        console.log('Connected to Database. Tables:', rows);
+
     } catch (err) {
-        console.error('Error connecting to database:', err);
+
+        console.error('Database connection error:', err);
+
     }
 })();
+
 
 const PORT = 3000;
 app.listen(PORT, '0.0.0.0', () => {
