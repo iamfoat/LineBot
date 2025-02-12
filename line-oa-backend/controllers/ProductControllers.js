@@ -41,9 +41,33 @@ const deleteProduct = async (req, res) => {
     }
 };
 
+const updateProduct = async (req, res) => {
+    const { id } = req.params;
+    const { productName, price, description, productImg } = req.body;
+
+    try {
+        // ตรวจสอบการมีอยู่ของผลิตภัณฑ์
+        const [product] = await db.query('SELECT * FROM Product WHERE Product_id = ?', [id]);
+        if (product.length === 0) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+
+        await db.query(
+            'UPDATE Product SET Product_name = ?, Price = ?, Product_img = ?, Description = ? WHERE Product_id = ?',
+            [productName, price, productImg || '', description || '', id]
+        );
+
+        res.status(200).json({ message: 'Product updated' });
+    } catch (err) {
+        console.error('Error updating product:', err);
+        res.status(500).json({ error: 'Failed to update product' });
+    }
+};
+
 
 module.exports = {
     getProducts,
     createProduct,
-    deleteProduct
+    deleteProduct,
+    updateProduct
 };
