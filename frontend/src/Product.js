@@ -12,18 +12,24 @@ const products = [
 const ManageProduct = () => {
   return (
     <div className="container">
-      <aside className="sidebar">
-        <nav>
+
+      <div className="header-container ">
+        <h1 className="header">Manage Product</h1>
+      </div>
+
+      <div className="sidebar">
           <ul>
-            <li><a href="#">Order</a></li>
-            <li><a href="#">Product</a></li>
-            <li><a href="#">Ingredient</a></li>
-            <li><a href="#">Dashboard</a></li>
+            <li><a href="#" style={{ width: "100%", boxSizing: "border-box", paddingLeft: "15px" }}>&#9776;</a>
+            <ul>
+              <li><a href="#">Order</a></li>
+              <li><a href="#">Product</a></li>
+              <li><a href="#">Ingredient</a></li>
+              <li><a href="#">Dashboard</a></li>
+            </ul>
+            </li>
           </ul>
-        </nav>
-      </aside>
-      <main className="content">
-        <h1>Manage Product</h1>
+
+          <div className="content">
         <div className="product-grid">
           {products.map((product, index) => (
             <div key={index} className="product">
@@ -33,7 +39,11 @@ const ManageProduct = () => {
             </div>
           ))}
         </div>
-      </main>
+      </div>
+
+      </div>
+
+
       <button className="add-button">+</button>
     </div>
   );

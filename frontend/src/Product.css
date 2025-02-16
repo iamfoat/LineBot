@@ -1,39 +1,84 @@
+.header-container {
+    width: 100%;
+    background-color: #6B4D38;
+    text-align: center;
+    padding: 20px;
+    color: white;
+}
+
+.header {
+    margin: 0;
+}
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f3e5d8;
+    background-color: #FFF3E4;
 }
 
+
 .container {
-    display: flex;
+    /* display: flex; */
 }
 
 .sidebar {
     width: 200px;
-    background-color: #e0c2a2;
-    padding: 20px;
+    background-color: #EED6C4;
+    padding: 0px;
     height: 100vh;
+    display: flex;
 }
 
 .sidebar a {
     display: block;
-    margin: 10px 0;
+    /* margin: 10px 0; */
+    /* padding-left: 15px; */
     text-decoration: none;
-    color: black;
+    color: #6B4F4F;
+    border-bottom: 1px solid #888;
+    transition: .3s;
+    width: 100%; 
+}
+
+.sidebar a:hover {
+    background-color: #fff;
+}
+
+.sidebar ul {
+    list-style: none;
+    text-align: center;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar li {
+    font-size: 1.2em;
+    line-height: 40px;
+    text-align: left ;
+    position: relative;
+}
+
+.sidebar li li {
+    font-size: .8em;
 }
 
 .content {
-    flex-grow: 1;
+    /* flex-grow: 1; */
     padding: 20px;
     text-align: center;
+    margin-left: 220px;
+    /* display: flex; */
 }
 
 .product-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 50px;
     justify-content: center;
+    align-items: start;
+    width: 90%;
+    max-width: 1400px;
 }
 
 .product {
@@ -42,6 +87,7 @@ body {
     border-radius: 10px;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
     text-align: center;
+    justify-content: flex-start;
 }
 
 .product img {
@@ -64,4 +110,31 @@ body {
     justify-content: center;
     align-items: center;
     cursor: pointer;
+}
+
+
+@media screen and (min-width: 650px) {
+    .sidebar li {
+        width: 200px;
+        border-bottom: none;
+        height: 50px;
+        line-height: 60px;
+        font-size: 1.4em;
+        display: inline-block;
+        margin-right: -4px;
+    }
+
+    .sidebar a {
+        border-bottom: none;
+    }
+
+    .sidebar li ul {
+        position: absolute;
+        display: none;
+        width: inherit;
+    }
+
+    .sidebar li:hover ul {
+        display: block;
+    }
 }
