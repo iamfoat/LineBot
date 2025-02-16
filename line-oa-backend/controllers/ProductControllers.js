@@ -46,7 +46,6 @@ const updateProduct = async (req, res) => {
     const { productName, price, description, productImg } = req.body;
 
     try {
-        // ตรวจสอบการมีอยู่ของผลิตภัณฑ์
         const [product] = await db.query('SELECT * FROM Product WHERE Product_id = ?', [id]);
         if (product.length === 0) {
             return res.status(404).json({ error: 'Product not found' });
@@ -63,7 +62,6 @@ const updateProduct = async (req, res) => {
         res.status(500).json({ error: 'Failed to update product' });
     }
 };
-
 
 module.exports = {
     getProducts,
