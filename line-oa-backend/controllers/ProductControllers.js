@@ -1,4 +1,22 @@
+const express = require("express");
+const app = express();
+const cors = require("cors");
+const multer = require("multer");
 const db = require('../db');
+
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, "uploads/");
+    },
+    filename: (req, file, cb) => {
+      cb(null, Date.now() + "-" + file.originalname);
+    },
+  });
+  const upload = multer({ storage });
 
 const getProducts = async (req , res) => {
     try {
@@ -13,9 +31,10 @@ const getProducts = async (req , res) => {
 
 const createProduct = async (req, res) => {
     try {
-        const { productName, price, description, productImg } = req.body;
+        const { productName, price, description } = req.body;
+        const productImg = req.file ? req.file.filename : null;
 
-        if (!productName || !price ) {
+        if (!productName || !price || !productImg) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
@@ -23,12 +42,21 @@ const createProduct = async (req, res) => {
             'INSERT INTO Product (Product_name, Price, Product_img, Description) VALUES (?, ?, ?, ?)',
             [productName, price, productImg, description]
         );
-        res.status(201).json({ message: 'Product created', productId: result.insertId });
+
+        res.status(201).json({
+            message: 'Product created',
+            product: { id: result.insertId, productName, price, productImg, description }
+        });
     } catch (err) {
         console.error('Error creating product:', err);
         res.status(500).json({ error: 'Failed to create product' });
+        console.log("Request Body:", req.body);
+        console.log("Uploaded File:", req.file);
+
     }
 };
+
+
 
 const deleteProduct = async (req, res) => {
     const { id } = req.params;

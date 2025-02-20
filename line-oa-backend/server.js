@@ -4,9 +4,14 @@ const app = express();
 const line = require('@line/bot-sdk');
 const db = require('./db');
 const productRoutes = require('./routes/ProductRoutes');
+const cors = require('cors')
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors());
 app.use('/api/products', productRoutes);
+app.use("/uploads", express.static("uploads"));
+
 
 const config = {
     channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
@@ -69,8 +74,8 @@ function handleEvent(event) {
 })();
 
 
-const PORT = 3000;
+const PORT = 8000;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log('Server is running on port 3000');
+    console.log('Server is running on port 8000');
 });
 

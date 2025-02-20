@@ -6,15 +6,15 @@ services:
   #   ports:
   #     - "5173:5173"
 
-  node-server:
-    container_name: node-server
-    build: ./line-oa-backend  # หรือเปลี่ยน path ให้ถูกต้องถ้าไฟล์ Dockerfile อยู่ที่อื่น
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-    networks:
-      - app-network
+  # node-server:
+  #   container_name: node-server
+  #   build: ./line-oa-backend  # หรือเปลี่ยน path ให้ถูกต้องถ้าไฟล์ Dockerfile อยู่ที่อื่น
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     - db
+  #   networks:
+  #     - app-network
 
   db:
     image: mysql:latest
