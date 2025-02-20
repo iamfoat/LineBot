@@ -1,9 +1,16 @@
 .header-container {
     width: 100%;
-    background-color: #6B4D38;
+    background-color: #4E342E;
     text-align: center;
     padding: 20px;
     color: white;
+    font-size: 24px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    top: 0;
+    /* left: 220px; */
+    z-index: 1000;
 }
 
 .header {
@@ -11,38 +18,47 @@
 }
 
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Poppins', sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #FFF3E4;
+    background-color: #F5F5F5;
+    color: #333;
+    /* overflow: hidden; */
 }
 
 
 .container {
     /* display: flex; */
+    flex-direction: row;
+    align-items: flex-start;
+    min-height: 100vh;
 }
 
 .sidebar {
-    width: 200px;
-    background-color: #EED6C4;
-    padding: 0px;
-    height: 100vh;
-    display: flex;
+    background-color: #D7CCC8;
+    padding: 20px;
+    width: 220px;
+    left: 0;
+    top: 0;
+    border-right: 2px solid #BCAAA4;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    min-height: 100vh;
+
 }
 
 .sidebar a {
     display: block;
-    /* margin: 10px 0; */
-    /* padding-left: 15px; */
     text-decoration: none;
-    color: #6B4F4F;
-    border-bottom: 1px solid #888;
+    color: #4E342E;
+    padding: 12px;
+    font-weight: 500;
     transition: .3s;
-    width: 100%; 
+    border-radius: 6px;
 }
 
 .sidebar a:hover {
-    background-color: #fff;
+    background-color: #BCAAA4;
+    color: white;
 }
 
 .sidebar ul {
@@ -64,21 +80,25 @@ body {
 }
 
 .content {
-    /* flex-grow: 1; */
+    flex-grow: 1;
     padding: 20px;
     text-align: center;
     margin-left: 220px;
-    /* display: flex; */
+    display: flex;
+    min-height: auto;
+    
 }
 
 .product-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 50px;
-    justify-content: center;
+    grid-template-columns: repeat(3, minmax(250px, 1fr));
+    gap: 30px;
+    justify-content: flex-start;
     align-items: start;
-    width: 90%;
-    max-width: 1400px;
+    width: 100%;
+    max-width: calc(100% - 240px);
+    margin-left: 240px;
+    flex-grow: 1;
 }
 
 .product {
@@ -100,16 +120,22 @@ body {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background: brown;
+    background: #4E342E;
     color: white;
     font-size: 24px;
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    transition: background 0.3s;
+}
+
+.add-button:hover {
+    background: #3E2723;
 }
 
 

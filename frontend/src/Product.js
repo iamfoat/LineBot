@@ -11,6 +11,7 @@ const products = [
 
 const ManageProduct = () => {
   return (
+    
     <div className="container">
 
       <div className="header-container ">
@@ -18,6 +19,7 @@ const ManageProduct = () => {
       </div>
 
       <div className="sidebar">
+
           <ul>
             <li><a href="#" style={{ width: "100%", boxSizing: "border-box", paddingLeft: "15px" }}>&#9776;</a>
             <ul>
@@ -40,8 +42,8 @@ const ManageProduct = () => {
           ))}
         </div>
       </div>
-
       </div>
+      
 
 
       <button className="add-button">+</button>
