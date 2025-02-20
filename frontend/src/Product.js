@@ -2,27 +2,24 @@ import React, { useState, useEffect } from "react";
 import "./Product.css"; 
 import axios from 'axios';
 
-// const Products = [
-//   { name: "น้ำส้มปั่น", price: 35, image: "orange-juice.png" },
-//   { name: "น้ำแตงโมปั่น", price: 35, image: "watermelon-juice.png" },
-//   { name: "น้ำสตรอเบอรี่ปั่น", price: 50, image: "strawberry-juice.png" },
-//   { name: "น้ำมะม่วงปั่น", price: 40, image: "mango-juice.png" },
-//   { name: "น้ำกล้วยปั่น", price: 35, image: "banana-juice.png" }
-// ];
 
 const ManageProduct = () => {
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [newProduct, setNewProduct] = useState({ name: "", price: "", image: "" ,description: ""});
+  const [data, setData] = useState([]); 
 
   useEffect(() => {
-    axios.get("http://localhost:8000/api/products")
-      .then((response) => {
-        setProducts(response.data); // 📌 ตั้งค่า products จาก API
-      })
-      .catch((error) => {
-        console.error("Error fetching products:", error);
-      });
+    LoadData()
+    // axios.get("http://localhost:8000/api/products")
+    //   .then((response) => {
+        
+    //     setProducts(response.data); // 📌 ตั้งค่า products จาก API
+    //     console.log(response.data)
+    //   })
+    //   .catch((error) => {
+    //     console.error("Error fetching products:", error);
+    //   });
   }, []);
 
   const handleInputChange = (e) => {
@@ -56,20 +53,31 @@ const handleAddProduct = () => {
   formData.append("productImg", newProduct.image);
 
   axios.post("http://localhost:8000/api/products", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-  })
-  .then((response) => {
-      console.log("Response:", response.data);
-      setProducts([...products, response.data.product]);
-      setNewProduct({ name: "", price: "", image: "", description: "" });
-      alert("Product added successfully!");
-      setShowForm(false);
-  })
-  .catch((error) => {
-      console.error("Error adding product:", error.response ? error.response.data : error);
-  });
+    headers: { "Content-Type": "multipart/form-data" },
+})
+.then((response) => {
+    console.log("Response Data:", response.data);
+
+    if (response.data && response.data.product) {
+        setProducts((prevProducts) => [...prevProducts, response.data.product]);
+        setNewProduct({ name: "", price: "", image: "", description: "" });
+        alert("Product added successfully!");
+        setShowForm(false);
+    } else {
+        console.error("Invalid response:", response.data);
+    }
+})
+.catch((error) => {
+    console.error("Error adding product:", error.response ? error.response.data : error);
+});
 };
 
+const LoadData = async () => {
+  await axios.get('http://localhost:8000/api/products') 
+  .then((res) => setData(res.data))
+  .catch((err) =>console.log(err))
+  
+}
 
   return (
     
@@ -94,12 +102,12 @@ const handleAddProduct = () => {
 
           <div className="content">
         <div className="product-grid">
-          {products.map((product, index) => (
+          {data.map((product, index) => (
             <div key={index} className="product">
-              <img src={`http://localhost:8000/uploads/${product.image}`} alt={product.name} />
-              <p>{product.name}</p>
-              <p>{product.price} บาท</p>
-              <p>{product.description}</p>
+              <img src={`http://localhost:8000/uploads/${product.Product_img}`} alt={product.name} />
+              <p>{product.Product_name}</p>
+              <p>{product.Price} บาท</p>
+              <p>{product.Description}</p>
             </div>
           ))}
         </div>

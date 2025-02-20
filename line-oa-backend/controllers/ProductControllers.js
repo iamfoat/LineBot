@@ -45,14 +45,17 @@ const createProduct = async (req, res) => {
 
         res.status(201).json({
             message: 'Product created',
-            product: { id: result.insertId, productName, price, productImg, description }
+            product: {
+                id: result.insertId,
+                name: productName,
+                price: price,
+                image: productImg,
+                description: description
+            }
         });
     } catch (err) {
         console.error('Error creating product:', err);
-        res.status(500).json({ error: 'Failed to create product' });
-        console.log("Request Body:", req.body);
-        console.log("Uploaded File:", req.file);
-
+        res.status(500).json({ error: 'Failed to create product' })
     }
 };
 
