@@ -1,26 +1,15 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const multer = require("multer");
 const db = require('../db');
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, "uploads/");
-    },
-    filename: (req, file, cb) => {
-      cb(null, Date.now() + "-" + file.originalname);
-    },
-  });
-  const upload = multer({ storage });
 
 const getProducts = async (req , res) => {
     try {
-
         const [products] = await db.query('SELECT * From Product');
         res.status(200).json(products);
     } catch (err) {
@@ -43,7 +32,7 @@ const createProduct = async (req, res) => {
             [productName, price, productImg, description]
         );
 
-        res.status(201).json({
+        res.status(201).json({  //ส่งกลับไปที่ React
             message: 'Product created',
             product: {
                 id: result.insertId,

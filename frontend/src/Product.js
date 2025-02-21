@@ -8,6 +8,7 @@ const ManageProduct = () => {
   const [showForm, setShowForm] = useState(false);
   const [newProduct, setNewProduct] = useState({ name: "", price: "", image: "" ,description: ""});
   const [data, setData] = useState([]); 
+  
 
   useEffect(() => {
     LoadData()
@@ -47,18 +48,18 @@ const handleAddProduct = () => {
   }
 
   const formData = new FormData();
-  formData.append("productName", newProduct.name);
+  formData.append("productName", newProduct.name);  //ชื่อ key ต้องตรงกับ API
   formData.append("price", newProduct.price);
   formData.append("description", newProduct.description);
   formData.append("productImg", newProduct.image);
 
-  axios.post("http://localhost:8000/api/products", formData, {
+  axios.post("http://localhost:8000/api/products", formData, {  //ส่งข้อมูลไปยัง API
     headers: { "Content-Type": "multipart/form-data" },
 })
-.then((response) => {
+.then((response) => {  //ส่งข้อมูลสำเร็จ then จะทำงาน
     console.log("Response Data:", response.data);
 
-    if (response.data && response.data.product) {
+    if (response.data && response.data.product) {  //เช็คว่า API ส่งข้อมูลกลับมาถูกต้อง
         setProducts((prevProducts) => [...prevProducts, response.data.product]);
         setNewProduct({ name: "", price: "", image: "", description: "" });
         alert("Product added successfully!");
@@ -74,11 +75,14 @@ const handleAddProduct = () => {
 };
 
 const LoadData = async () => {
-  await axios.get('http://localhost:8000/api/products') 
-  .then((res) => setData(res.data))
-  .catch((err) =>console.log(err))
-  
-}
+  try {
+      const res = await axios.get('http://localhost:8000/api/products');
+      setData(res.data);  //update state
+  } catch (err) {
+      console.error("Error fetching products:", err);
+  }
+};
+
 
   return (
     

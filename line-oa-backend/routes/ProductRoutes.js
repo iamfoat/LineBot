@@ -5,12 +5,13 @@ const multer = require("multer");
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, "uploads/");
+        cb(null, "uploads/");  //เก็บไฟล์ไปไว้ที่ uploads
     },
     filename: (req, file, cb) => {
         cb(null, Date.now() + "-" + file.originalname);
     },
 });
+
 const upload = multer({ storage });
 
 router.get('/', productController.getProducts);
