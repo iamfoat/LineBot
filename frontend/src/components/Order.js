@@ -3,7 +3,11 @@ import "../css/Order.css"
 
 function Order() {
   return (
-    <div>Order</div>
+    <div className="container">
+      <div className="header-container ">
+        <h1 className="header">Order</h1>
+      </div>
+    </div>
   )
 }
 

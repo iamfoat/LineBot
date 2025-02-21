@@ -5,6 +5,8 @@ const line = require('@line/bot-sdk');
 const db = require('./db');
 const productRoutes = require('./routes/ProductRoutes');
 const cors = require('cors')
+const axios = require("axios");
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -30,20 +32,47 @@ app.get('/', (req, res) => {
     res.send('Hello, LINE OA is running!');
 });
 
-app.post('/webhook',line.middleware(config), (req, res) => {
-    console.log('Headers:', req.headers);
-    console.log('Body:', req.body);
-    if (!req.body.events || req.body.events.length === 0) {
-        return res.status(200).send('No events');
-    }
-    
-    Promise.all(req.body.events.map(handleEvent))
-        .then((result) => res.status(200).json(result))
-        .catch((err) => {
-            console.error('Error handling events:', err);
-            res.status(500).send('Internal Server Error');
+async function getUserProfile(userId) {
+    try {
+        const response = await axios.get(`https://api.line.me/v2/bot/profile/${userId}`, {
+            headers: {
+                "Authorization": `Bearer ${config.channelAccessToken}`
+            }
         });
+        return response.data;
+    } catch (error) {
+        console.error("Error getting user profile:", error);
+        return null;
+    }
+}
+
+app.post('/webhook', async (req, res) => {
+    const events = req.body.events;
+    
+    for (let event of events) {
+        if (event.type === 'message') { // 📩 เช็คว่าเป็นข้อความ
+            const userId = event.source.userId;
+            console.log("New Message from:", userId);
+
+            // ดึงชื่อจาก API LINE
+            const profile = await getUserProfile(userId);
+
+            if (profile) {
+                const customerName = profile.displayName; // ใช้ชื่อจาก LINE
+                const customerPhone = null; // ยังไม่มีข้อมูลเบอร์โทร
+                const customerAddress = null; // ยังไม่มีที่อยู่
+
+                // 📌 บันทึกข้อมูลเฉพาะ `userId` (Customer_id)
+                await db.query(
+                    'INSERT INTO Customer (Customer_id, Customer_name, Customer_phone, Customer_address) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE Customer_name = VALUES(Customer_name)',
+                    [userId, customerName, customerPhone, customerAddress]
+                );
+            }
+        }
+    }
+    res.sendStatus(200);
 });
+
 
 
 function handleEvent(event) {
