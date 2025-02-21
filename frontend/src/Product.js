@@ -63,6 +63,7 @@ const handleAddProduct = () => {
         setNewProduct({ name: "", price: "", image: "", description: "" });
         alert("Product added successfully!");
         setShowForm(false);
+        LoadData();
     } else {
         console.error("Invalid response:", response.data);
     }
@@ -104,7 +105,7 @@ const LoadData = async () => {
         <div className="product-grid">
           {data.map((product, index) => (
             <div key={index} className="product">
-              <img src={`http://localhost:8000/uploads/${product.Product_img}`} alt={product.name} />
+              <img src={`http://localhost:8000/uploads/${product.Product_img}`} alt={product.Product_name} />
               <p>{product.Product_name}</p>
               <p>{product.Price} บาท</p>
               <p>{product.Description}</p>
