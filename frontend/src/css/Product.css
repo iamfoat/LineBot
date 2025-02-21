@@ -102,12 +102,18 @@ body {
 }
 
 .product {
+    position: relative;
     background: #fff;
     padding: 15px;
     border-radius: 10px;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
     text-align: center;
     justify-content: flex-start;
+    transition: transform 0.2s ease-in-out;
+}
+
+.product:hover {
+    transform: scale(1.05); /* ขยายเล็กน้อยเมื่อ hover */
 }
 
 .product img {
@@ -137,6 +143,44 @@ body {
 .add-button:hover {
     background: #3E2723;
 }
+
+.edit-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 5px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: opacity 0.2s ease-in-out;
+  }
+  
+  .edit-icon:hover {
+    background: rgba(0, 0, 0, 0.8);
+  }
+
+  .edit-delete-icons {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 10px;
+  }
+  
+  .edit-delete-icons svg {
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 5px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.2s ease-in-out;
+  }
+  
+  .edit-delete-icons svg:hover {
+    background: rgba(255, 0, 0, 0.8);
+  }
+  
 
 .modal {
     position: fixed;

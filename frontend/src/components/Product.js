@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import "./Product.css"; 
+import "../css/Product.css"; 
 import axios from 'axios';
+import { FaEdit, FaTrash } from "react-icons/fa";
 
 
 const ManageProduct = () => {
@@ -8,6 +9,8 @@ const ManageProduct = () => {
   const [showForm, setShowForm] = useState(false);
   const [newProduct, setNewProduct] = useState({ name: "", price: "", image: "" ,description: ""});
   const [data, setData] = useState([]); 
+  const [hoveredProduct, setHoveredProduct] = useState(null);
+  const [editProduct, setEditProduct] = useState(null);
   
 
   useEffect(() => {
@@ -83,6 +86,54 @@ const LoadData = async () => {
   }
 };
 
+const handleEditProduct = (product) => { //คอลัมน์แรกคือชื่อที่ใช้ใน react
+  setEditProduct({
+    id: product.Product_id, // ใช้ id จากฐานข้อมูล
+    name: product.Product_name, 
+    price: product.Price, 
+    description: product.Description,
+    image: product.Product_img, // เก็บภาพเดิม
+    newImage: null 
+  });
+};
+
+
+const handleSaveEdit = async () => {
+  try {
+    const formData = new FormData();
+    formData.append("productName", editProduct.name);
+    formData.append("price", editProduct.price);
+    formData.append("description", editProduct.description);
+    
+    if (editProduct.newImage) {
+      formData.append("productImg", editProduct.newImage); // ถ้ามีรูปใหม่ให้ส่งไป
+    }
+
+    await axios.put(`http://localhost:8000/api/products/${editProduct.id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" }
+    });
+
+    alert("Product updated successfully!");
+    setEditProduct(null); // ปิดฟอร์ม
+    await LoadData(); // โหลดข้อมูลใหม่
+  } catch (error) {
+    console.error("Error updating product:", error);
+  }
+};
+
+const handleDeleteProduct = async (id) => {
+  if (window.confirm("You want to delete?")) {
+    try {
+      await axios.delete(`http://localhost:8000/api/products/${id}`);
+      alert("ลบสินค้าสำเร็จ!");
+      await LoadData(); // โหลดข้อมูลใหม่
+    } catch (error) {
+      console.error("Error deleting product:", error);
+    }
+  }
+};
+
+
 
   return (
     
@@ -97,7 +148,7 @@ const LoadData = async () => {
           <ul>
             <li><a href="#" style={{ width: "100%", boxSizing: "border-box", paddingLeft: "15px" }}>&#9776;</a>
             <ul>
-              <li><a href="#">Order</a></li>
+              <li><a href="/orders">Order</a></li>
               <li><a href="#">Product</a></li>
               <li><a href="#">Ingredient</a></li>
               <li><a href="#">Dashboard</a></li>
@@ -108,11 +159,25 @@ const LoadData = async () => {
           <div className="content">
         <div className="product-grid">
           {data.map((product, index) => (
-            <div key={index} className="product">
+
+            <div key={index} className="product"
+            onMouseEnter={() => setHoveredProduct(index)} // เมื่อเมาส์เลื่อนเข้า
+            onMouseLeave={() => setHoveredProduct(null)} // เมื่อเมาส์ออก
+            onTouchStart={() => setHoveredProduct(index)} // เมื่อแตะที่สินค้า
+            >
+
               <img src={`http://localhost:8000/uploads/${product.Product_img}`} alt={product.Product_name} />
               <p>{product.Product_name}</p>
               <p>{product.Price} บาท</p>
               <p>{product.Description}</p>
+
+              {hoveredProduct === index && (
+              <div className="edit-icon">
+                <FaEdit onClick={() => handleEditProduct(product)} />
+                <FaTrash onClick={() => handleDeleteProduct(product.Product_id)} style={{ color: "red", marginLeft: "10px" }} />
+              </div>
+            )}
+
             </div>
           ))}
         </div>
@@ -136,7 +201,36 @@ const LoadData = async () => {
           </div>
         </div>
       )}
+    {editProduct && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>Edit Product</h2>
+            <input
+            type="text"
+            value={editProduct.name}
+            onChange={(e) => setEditProduct({ ...editProduct, name: e.target.value })}
+            />
+            <input
+            type="number"
+            value={editProduct.price}
+            onChange={(e) => setEditProduct({ ...editProduct, price: e.target.value })}
+            />
+            <input
+            type="text"
+            value={editProduct.description}
+            onChange={(e) => setEditProduct({ ...editProduct, description: e.target.value })}
+            />
+            <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setEditProduct({ ...editProduct, newImage: e.target.files[0] })}
+            />
 
+            <button onClick={handleSaveEdit}>Save</button>
+            <button onClick={() => setEditProduct(null)}>Cancel</button>
+          </div>
+        </div>
+      )}
       
     </div>
   );

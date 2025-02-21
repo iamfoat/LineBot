@@ -20,6 +20,6 @@ router.post('/', upload.single("productImg"), productController.createProduct);
 
 router.delete('/:id', productController.deleteProduct);
 
-router.put('/:id', productController.updateProduct);
+router.put('/:id', upload.single("productImg"), productController.updateProduct);
 
 module.exports = router;
