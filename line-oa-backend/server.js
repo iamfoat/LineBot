@@ -6,6 +6,8 @@ const db = require('./db');
 const productRoutes = require('./routes/ProductRoutes');
 const cors = require('cors')
 const axios = require("axios");
+const cron = require("node-cron");
+const { sendMenuToLine } = require("./controllers/ProductControllers");
 
 
 app.use(express.json());
@@ -93,8 +95,6 @@ app.post('/webhook', async (req, res) => {
 });
 
 
-
-
 function handleEvent(event) {
     console.log('Received event:', event);
 
@@ -121,6 +121,18 @@ function handleEvent(event) {
 
     }
 })();
+
+cron.schedule("0 12 * * *", async () => {
+    console.log("📅 [CRON JOB] กำลังส่งเมนูสินค้าไปยังลูกค้า...");
+    try {
+        await sendMenuToLine(); // เรียกใช้ฟังก์ชันส่งเมนู
+    } catch (error) {
+        console.error("Error sending menu:", error);
+    }
+}, {
+    scheduled: true,
+    timezone: "Asia/Bangkok" // ตั้งค่าเป็นเวลาประเทศไทย
+});
 
 
 const PORT = 8000;

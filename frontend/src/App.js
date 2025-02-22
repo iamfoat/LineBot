@@ -1,6 +1,7 @@
 import './App.css';
 import ManageProduct from './components/Product';
 import Order from './components/Order';
+import Ingredient from './components/Ingredient';
 import axios from 'axios';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 
@@ -20,17 +21,19 @@ function App() {
   return (
     <Router>
       <div className="App">
-        {/* <nav>
-          <Link to="/">🏠 Home</Link> | 
-          <Link to="/products">📦 Products</Link> | 
-          <Link to="/orders">🛒 Orders</Link>
-        </nav> */}
-
+        
         <Routes>
-          {/* <Route path="/" element={<h1>🏠 Home Page</h1>} /> */}
-          <Route path="/" element={<ManageProduct />} />
+          <Route path="/" element={<h1>Home Page</h1>} />
+          <Route path="/products" element={<ManageProduct />} />
           <Route path="/orders" element={<Order />} />
+          <Route path='/Ingredients' element={<Ingredient />} />
         </Routes>
+
+        <nav> 
+          <Link to="/products">Products</Link> | 
+          <Link to="/orders">Orders</Link> |
+          <Link to="/Ingredients">Ingredients</Link>
+        </nav>
       </div>
     </Router>
   );

@@ -16,7 +16,7 @@ const config = {
 };
 
 
-const getProducts = async (req , res) => {
+const getProducts = async (req , res) => { //ดึงสินค้า
     try {
         const [products] = await db.query('SELECT * From Product');
         res.status(200).json(products);
@@ -120,7 +120,7 @@ const updateProduct = async (req, res) => {
 
         res.status(200).json({ message: 'Product updated' });
     } catch (err) {
-        console.error('🚨 Error updating product:', err);
+        console.error('Error updating product:', err);
         res.status(500).json({ error: 'Failed to update product' });
     }
 };
@@ -139,8 +139,24 @@ const generateFlexMenu = (products) => {
             "type": "box",
             "layout": "vertical",
             "contents": [
-                { "type": "text", "text": product.Product_name, "weight": "bold", "size": "xl" },
-                { "type": "text", "text": `฿${product.Price}`, "color": "#888888", "size": "sm" }
+                { "type": "text", 
+                    "text": product.Product_name, 
+                    "weight": "bold", 
+                    "size": "xl" 
+                },
+
+                { "type": "text", 
+                    "text": `฿${product.Price}`, 
+                    "color": "#888888", 
+                    "size": "sm" 
+                },
+
+                {
+                    "type": "text",
+                    "text": product.Description,
+                    "color": "#888888",
+                    "size": "sm"
+                }
             ]
         }
     }));

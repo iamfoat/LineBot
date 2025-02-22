@@ -156,11 +156,12 @@ const sendMenuToLine = async () => {
       <div className="sidebar">
 
           <ul>
-            <li><a href="#" style={{ width: "100%", boxSizing: "border-box", paddingLeft: "15px" }}>&#9776;</a>
+            <li><a href="#" style={{ width: "100%", boxSizing: "border-box", paddingLeft: "15px" }}>Menu</a> 
             <ul>
+            <li><a href="/">Home Page</a></li>
               <li><a href="/orders">Order</a></li>
-              <li><a href="#">Product</a></li>
-              <li><a href="#">Ingredient</a></li>
+              <li><a href="/products">Product</a></li>
+              <li><a href="/Ingredients">Ingredient</a></li>
               <li><a href="#">Dashboard</a></li>
             </ul>
             </li>
