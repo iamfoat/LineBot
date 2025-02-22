@@ -133,6 +133,16 @@ const handleDeleteProduct = async (id) => {
   }
 };
 
+const sendMenuToLine = async () => {
+  try {
+      await axios.post("http://localhost:8000/api/products/send-menu");
+      alert("ส่งเมนูไปที่ LINE แล้ว!");
+  } catch (error) {
+      console.error("🚨 Error sending menu:", error);
+      alert("ไม่สามารถส่งเมนูได้!");
+  }
+};
+
 
 
   return (
@@ -166,7 +176,7 @@ const handleDeleteProduct = async (id) => {
             onTouchStart={() => setHoveredProduct(index)} // เมื่อแตะที่สินค้า
             >
 
-              <img src={`http://localhost:8000/uploads/${product.Product_img}`} alt={product.Product_name} />
+              <img src={`https://ced2-171-6-142-15.ngrok-free.app/uploads/${product.Product_img}`} alt={product.Product_name} />
               <p>{product.Product_name}</p>
               <p>{product.Price} บาท</p>
               <p>{product.Description}</p>
@@ -187,6 +197,7 @@ const handleDeleteProduct = async (id) => {
 
 
       <button className="add-button" onClick={() => setShowForm(true)}>+</button>
+      <button onClick={sendMenuToLine}>ส่งเมนูไป LINE</button>
 
       {showForm && (
         <div className="modal">

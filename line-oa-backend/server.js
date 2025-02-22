@@ -46,32 +46,52 @@ async function getUserProfile(userId) {
     }
 }
 
+
 app.post('/webhook', async (req, res) => {
     const events = req.body.events;
-    
+
     for (let event of events) {
-        if (event.type === 'message') { // 📩 เช็คว่าเป็นข้อความ
-            const userId = event.source.userId;
-            console.log("New Message from:", userId);
 
-            // ดึงชื่อจาก API LINE
-            const profile = await getUserProfile(userId);
+        if (event.type === 'message') { //เช็คว่าเป็นข้อความ
+            let customerId = null;
+            let customerName = null;
 
-            if (profile) {
-                const customerName = profile.displayName; // ใช้ชื่อจาก LINE
-                const customerPhone = null; // ยังไม่มีข้อมูลเบอร์โทร
-                const customerAddress = null; // ยังไม่มีที่อยู่
+            // ตรวจสอบว่าเป็นข้อความจาก "ผู้ใช้" หรือ "กลุ่ม"
+            if (event.source.type === "group") {
+                customerId = event.source.groupId; // ใช้ `groupId` เป็น `Customer_id`
+                customerName = "Group Chat";
+                // console.log("ได้รับข้อความจาก Group ID:", customerId);
 
-                // 📌 บันทึกข้อมูลเฉพาะ `userId` (Customer_id)
-                await db.query(
-                    'INSERT INTO Customer (Customer_id, Customer_name, Customer_phone, Customer_address) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE Customer_name = VALUES(Customer_name)',
-                    [userId, customerName, customerPhone, customerAddress]
-                );
+            } else if (event.source.type === "user") {
+                customerId = event.source.userId; // ใช้ `userId` เป็น `Customer_id`
+                // console.log("ได้รับข้อความจาก User ID:", customerId);
+
+                //ดึงข้อมูลโปรไฟล์
+                const profile = await getUserProfile(customerId);
+                if (profile) {
+                    customerName = profile.displayName;
+                }
+            }
+
+            if (customerId) {
+                try {
+                    await db.query(
+                        `INSERT INTO Customer (Customer_id, Customer_name) 
+                         VALUES (?, ?) 
+                         ON DUPLICATE KEY UPDATE Customer_name = VALUES(Customer_name)`,
+                        [customerId, customerName]
+                    );
+                    console.log(`บันทึก ${customerId} ลงฐานข้อมูลเรียบร้อย`);
+                } catch (error) {
+                    console.error("เกิดข้อผิดพลาดในการบันทึก:", error);
+                }
             }
         }
     }
+
     res.sendStatus(200);
 });
+
 
 
 
