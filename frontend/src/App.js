@@ -29,11 +29,11 @@ function App() {
           <Route path='/Ingredients' element={<Ingredient />} />
         </Routes>
 
-        <nav> 
+        {/* <nav> 
           <Link to="/products">Products</Link> | 
           <Link to="/orders">Orders</Link> |
           <Link to="/Ingredients">Ingredients</Link>
-        </nav>
+        </nav> */}
       </div>
     </Router>
   );
