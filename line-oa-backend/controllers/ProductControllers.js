@@ -130,7 +130,7 @@ const generateFlexMenu = (products) => {
         "type": "bubble",
         "hero": {
             "type": "image",
-            "url": `https://ced2-171-6-142-15.ngrok-free.app/uploads/${product.Product_img}`,
+            "url": `https://15f0-171-6-142-15.ngrok-free.app/uploads/${product.Product_img}`,
             "size": "full",
             "aspectRatio": "20:13",
             "aspectMode": "cover"
@@ -167,7 +167,7 @@ const generateFlexMenu = (products) => {
     };
 };
 
-const sendMenuToLine = async (req, res) => {
+const sendMenuToLine = async (req = null, res = null) => {
     try {
         const [products] = await db.query("SELECT * FROM Product");
 
@@ -179,6 +179,8 @@ const sendMenuToLine = async (req, res) => {
 
         const flexMenu = generateFlexMenu(products);
         console.log("ส่ง Flex Message ไปที่ LINE:", JSON.stringify(flexMenu, null, 2));
+        console.log("Flex Message Payload:", JSON.stringify(flexMenu, null, 2));
+
 
         const headers = {
             "Content-Type": "application/json",
