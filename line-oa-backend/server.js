@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const app = express();
+const { exec } = require("child_process");
 const line = require('@line/bot-sdk');
 const db = require('./db');
 const productRoutes = require('./routes/ProductRoutes');
@@ -8,6 +9,7 @@ const cors = require('cors')
 const axios = require("axios");
 const cron = require("node-cron");
 const { sendMenuToLine } = require("./controllers/ProductControllers");
+const path = require("path");
 
 
 app.use(express.json());
@@ -54,9 +56,10 @@ app.post('/webhook', async (req, res) => {
 
     for (let event of events) {
 
-        if (event.type === 'message') { //เช็คว่าเป็นข้อความ
+        if (event.type === 'message' && event.message.type === "text") { //เช็คว่าเป็นข้อความ
             let customerId = null;
             let customerName = null;
+            let customerText = event.message.text;
 
             // ตรวจสอบว่าเป็นข้อความจาก "ผู้ใช้" หรือ "กลุ่ม"
             if (event.source.type === "group") {
@@ -84,6 +87,89 @@ app.post('/webhook', async (req, res) => {
                         [customerId, customerName]
                     );
                     console.log(`บันทึก ${customerId} ลงฐานข้อมูลเรียบร้อย`);
+
+                    // ✅ 2. เรียก Model วิเคราะห์คำสั่งซื้อ
+                    const modelPath = path.join(__dirname, "..", "Model", "NLP.py"); // ✅ ใช้พาธแบบเต็ม
+                    exec(`python "${modelPath}" "${customerText}"`, async (error, stdout) => {
+                        if (error) {
+                            console.error("❌ Error running model:", error);
+                            return;
+                        }
+
+                        // ✅ 3. แปลงผลลัพธ์จาก Python เป็น JSON
+                        let orders = JSON.parse(stdout);
+                        if (orders.length === 0) {
+                            await client.replyMessage(event.replyToken, { type: "text", text: "ขออภัย ไม่พบสินค้าที่ตรงกับคำสั่งของคุณ" });
+                            return;
+                        }
+
+                        
+                        // ✅ 4. คำนวณยอดรวม `Total_amount`
+                        let totalAmount = 0;
+                        for (let order of orders) {
+                            const [rows] = await db.query(
+                                "SELECT Price FROM Product WHERE Product_id = ?",
+                                [order.product_id]
+                            );
+                            
+                            if (!rows.length || !rows[0].Price) {
+                                console.error(`❌ ไม่พบราคาสินค้าสำหรับ Product ID: ${order.product_id}`);
+                                continue;
+                            }
+                            
+                            let price = parseFloat(rows[0].Price);
+                            if (isNaN(price)) {
+                                console.error(`❌ ราคาไม่ถูกต้องสำหรับ Product ID: ${order.product_id}, ค่า: ${rows[0].Price}`);
+                                price = 0;  // ตั้งค่าเริ่มต้นเป็น 0 ถ้าพบปัญหา
+                            }
+                            
+                            let subtotal = price * order.quantity;
+                            if (isNaN(subtotal) || subtotal === null) {
+                                console.error(`❌ Subtotal เป็น NaN หรือ Null สำหรับ Product ID: ${order.product_id}`);
+                                subtotal = 0; // หรืออาจใช้ continue; เพื่อข้ามไป
+                            }
+                            totalAmount += subtotal;
+                    
+                        }
+
+                        // ✅ 5. บันทึกข้อมูล Order ลงฐานข้อมูล
+                        const [orderResult] = await db.query(
+                            "INSERT INTO `Order` (Customer_id, Total_amount, Customer_Address, Status) VALUES (?, ?, ?, 'Preparing')",
+                            [customerId, totalAmount, "ที่อยู่ลูกค้า (อัปเดตทีหลัง)"]
+                        );
+                        const orderId = orderResult.insertId; // ได้ค่า Order_id ที่สร้างใหม่
+                        console.log(`✅ Order ID ที่สร้าง: ${orderId}`);
+
+                        // ✅ 6. บันทึกข้อมูล Order_item
+                        for (let order of orders) {
+                            const [rows] = await db.query(
+                                "SELECT Price FROM Product WHERE Product_id = ?",
+                                [order.product_id]
+                            );
+
+                            if (!rows.length || !rows[0].Price) continue;
+                            let price = parseFloat(rows[0].Price);
+                            let subtotal = price * order.quantity;
+
+                            console.log(`📝 กำลังบันทึก Order_item: Order_id=${orderId}, Product_id=${order.product_id}, Quantity=${order.quantity}, Subtotal=${subtotal}`);
+
+                            await db.query(
+                                "INSERT INTO Order_item (Order_id, Product_id, Quantity, Subtotal, Status) VALUES (?, ?, ?, ?, 'Preparing')",
+                                [orderId, order.product_id, order.quantity, subtotal]
+                            );
+                        }
+                        
+
+                        //✅ 7. ตอบกลับลูกค้า
+                        let replyText = "✅ คำสั่งซื้อของคุณ:\n";
+                        orders.forEach(order => {
+                            replyText += `- ${order.menu} จำนวน ${order.quantity} แก้ว\n`;
+                        });
+
+                        replyText += `💰 ยอดรวม: ${totalAmount} บาท`;
+
+                        await client.replyMessage(event.replyToken, { type: "text", text: replyText });
+                    });
                 } catch (error) {
                     console.error("เกิดข้อผิดพลาดในการบันทึก:", error);
                 }
