@@ -1,0 +1,109 @@
+.containerorder {
+    /* display: flex; */
+    flex-direction: column;
+    align-items: center;
+    /* padding: 20px; */
+  }
+  
+.header-containerorder {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 800px;
+}
+  
+.order-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    width: 100%;
+    max-width: 1200px; /* ✅ ทำให้กว้างขึ้น */
+    margin-left: 240px;
+    padding: 20px;
+    gap: 80px;
+}
+  
+.order {
+    border: 1px solid #ccc;
+    padding: 20px;
+    border-radius: 10px;
+    width: 100%;
+    background: #f9f9f9;
+    display: flex;
+    flex-direction: column; /* ✅ ให้เรียงแนวตั้ง */
+    text-align: left;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1); /* ✅ เพิ่มเงาให้ดูดีขึ้น */
+}
+
+.order-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #D7CCC8; /* ✅ สีพื้นหลัง */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    width: 100%; /* ✅ ให้ยืดเต็ม container */
+    max-width: 100%; /* ✅ ลบค่าจำกัด */
+    min-height: 200px; /* ✅ ขยายความสูง */
+    flex-grow: 1;
+    
+}
+
+.order-left {
+    flex: 1;
+    text-align: left;
+    padding-right: 100px;
+    width: 150px;
+}
+
+.order-right {
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 150px; /* ✅ ทำให้กว้างขึ้น */
+    height: 120px; /* ✅ ทำให้สูงขึ้น */
+    text-align: center;
+    background: #4E342E; /* ✅ เปลี่ยนสี */
+    padding: 15px;
+    border-radius: 15px;
+}
+
+.contentOrder {
+    flex-grow: 1;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    padding: 20px;
+    text-align: center;
+    margin-left: 220px;
+    display: flex;
+    min-height: auto;
+    
+}
+
+.order p {
+    margin: 5px 0; 
+    font-size: 18px; 
+  }
+  
+  .status-icon {
+    font-size: 40px; /* ✅ ทำให้ใหญ่ขึ้น */
+    margin-top: 5px;
+}
+
+@media (max-width: 768px) {
+    .order-card {
+        flex-direction: column; /* ✅ เรียงแนวตั้ง */
+        text-align: center;
+    }
+    .order-right {
+        width: 100%;
+        margin-top: 10px;
+    }
+}
+  
+
+  

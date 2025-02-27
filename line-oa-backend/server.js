@@ -5,6 +5,7 @@ const { exec } = require("child_process");
 const line = require('@line/bot-sdk');
 const db = require('./db');
 const productRoutes = require('./routes/ProductRoutes');
+const orderRoutes = require('./routes/OrderRoutes')
 const cors = require('cors')
 const axios = require("axios");
 const cron = require("node-cron");
@@ -17,6 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use('/api/products', productRoutes);
 app.use("/uploads", express.static("uploads"));
+app.use('/api/orders',orderRoutes)
 
 
 const config = {
@@ -99,7 +101,7 @@ app.post('/webhook', async (req, res) => {
                         // ✅ 3. แปลงผลลัพธ์จาก Python เป็น JSON
                         let orders = JSON.parse(stdout);
                         if (orders.length === 0) {
-                            await client.replyMessage(event.replyToken, { type: "text", text: "ขออภัย ไม่พบสินค้าที่ตรงกับคำสั่งของคุณ" });
+                            // await client.replyMessage(event.replyToken, { type: "text", text: "ขออภัย ไม่พบสินค้าที่ตรงกับคำสั่งของคุณ" });
                             return;
                         }
 

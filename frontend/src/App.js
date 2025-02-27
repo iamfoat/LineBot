@@ -2,7 +2,6 @@ import './App.css';
 import ManageProduct from './components/Product';
 import Order from './components/Order';
 import Ingredient from './components/Ingredient';
-import axios from 'axios';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 
 

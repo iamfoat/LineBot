@@ -57,7 +57,6 @@ const createProduct = async (req, res) => {
 };
 
 
-
 const deleteProduct = async (req, res) => {
     const { id } = req.params;
 
@@ -130,7 +129,7 @@ const generateFlexMenu = (products) => {
         "type": "bubble",
         "hero": {
             "type": "image",
-            "url": `https://63f5-171-6-142-15.ngrok-free.app/uploads/${product.Product_img}`,
+            "url": `https://a2ca-171-6-142-15.ngrok-free.app/uploads/${product.Product_img}`,
             "size": "full",
             "aspectRatio": "20:13",
             "aspectMode": "cover"

@@ -32,6 +32,7 @@ from fuzzywuzzy import fuzz, process
 import sys
 import json
 sys.stdout.reconfigure(encoding='utf-8')
+
 def get_products_from_db():
     connection = pymysql.connect(
         host="localhost",
@@ -54,35 +55,35 @@ def get_products_from_db():
 products = get_products_from_db()
 menu_db = {normalize(p["Product_name"]): p["Product_id"] for p in products}  # Dict {ชื่อสินค้า: ID}
           
-def find_best_match(word, menu_db, threshold=80):
-    match, score = process.extractOne(normalize(word), [normalize(m) for m in menu_db])
-    return match if score >= threshold else None
+def find_best_match(word, menu_db, threshold=90):  # เพิ่ม threshold เป็น 90
+    match, score = process.extractOne(word, menu_db.keys())
+
+    if score >= threshold:  # ป้องกันการแมตช์ที่ผิด
+        return match, menu_db[match]
+    return None, None
 
 def extract_orders(text):
     orders = []
+    detected_menus = {}  # ใช้ dictionary เพื่อลดการซ้ำ
 
-    # 📌 ลบช่องว่างเกิน และ Normalize ข้อความ
     text = normalize(text.strip())
     text = re.sub(r'\s+', ' ', text)
 
-    # 📌 ใช้ Regular Expression ค้นหาจำนวนที่อยู่ติดกับเมนู
-    quantity_dict = {}
-    matches = re.findall(r'(\D+)\s*(\d+)', text)  # เช่น "น้ำลำไย 4"
+    matches = re.findall(r'(\D+)\s*(\d+)', text)  
     for menu_name, qty in matches:
-        quantity_dict[normalize(menu_name.strip())] = int(qty)
+        menu_name = normalize(menu_name.strip())
+        quantity = int(qty) if qty.isdigit() else 1
 
-    # 📌 ตัดคำและแมตช์กับเมนู
-    words = [w.strip() for w in word_tokenize(text) if w.strip()]
-    detected_menus = set()
+        if menu_name in detected_menus:
+            detected_menus[menu_name] += quantity
+        else:
+            detected_menus[menu_name] = quantity
 
-    for word in words:
-        best_match = find_best_match(word, menu_db)
-        if best_match and best_match not in detected_menus:
-            quantity = quantity_dict.get(normalize(word), 1)  # ถ้าจำนวนไม่ระบุให้ใช้ 1
-            orders.append({"menu": best_match, "quantity": quantity})
-            detected_menus.add(best_match)  # ป้องกันเมนูซ้ำ
+    for menu, qty in detected_menus.items():
+        orders.append({"menu": menu, "quantity": qty})
 
     return orders
+
 
 if __name__ == "__main__":
     text_input = sys.argv[1]
