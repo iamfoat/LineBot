@@ -8,22 +8,7 @@ const axios = require("axios");
 
 const getOrder = async (req , res) => {
     try {
-        const query = `
-            SELECT 
-                o.Order_id, 
-                o.Customer_id, 
-                COALESCE(c.Customer_Name, 'ไม่พบชื่อ') AS Customer_Name,  /* ✅ ป้องกันค่า NULL */
-                o.Total_amount, 
-                o.Customer_Address, 
-                o.Create_at, 
-                o.Status
-            FROM orders o
-            LEFT JOIN customers c ON o.Customer_id = c.Customer_id;
-
-
-        `;
-
-        const [orders] = await db.query(query);
+        const [orders] = await db.query('SELECT * FROM `Order`');
         res.status(200).json(orders);
     } catch (err) {
         console.error('Error fetching Product: ', err);

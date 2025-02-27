@@ -163,12 +163,12 @@ app.post('/webhook', async (req, res) => {
                         
 
                         //✅ 7. ตอบกลับลูกค้า
-                        let replyText = "✅ คำสั่งซื้อของคุณ:\n";
+                        let replyText = "คำสั่งซื้อของคุณ:\n";
                         orders.forEach(order => {
                             replyText += `- ${order.menu} จำนวน ${order.quantity} แก้ว\n`;
                         });
 
-                        replyText += `💰 ยอดรวม: ${totalAmount} บาท`;
+                        replyText += `ยอดรวม: ${totalAmount} บาท`;
 
                         await client.replyMessage(event.replyToken, { type: "text", text: replyText });
                     });
