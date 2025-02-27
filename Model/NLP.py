@@ -55,10 +55,10 @@ def get_products_from_db():
 products = get_products_from_db()
 menu_db = {normalize(p["Product_name"]): p["Product_id"] for p in products}  # Dict {ชื่อสินค้า: ID}
           
-def find_best_match(word, menu_db, threshold=90):  # เพิ่ม threshold เป็น 90
+def find_best_match(word, menu_db, threshold=80):  # ✅ ลด threshold เป็น 80
     match, score = process.extractOne(word, menu_db.keys())
 
-    if score >= threshold:  # ป้องกันการแมตช์ที่ผิด
+    if score >= threshold:  # ✅ ป้องกันการจับคู่ผิด
         return match, menu_db[match]
     return None, None
 
@@ -73,6 +73,8 @@ def extract_orders(text):
     for menu_name, qty in matches:
         menu_name = normalize(menu_name.strip())
         quantity = int(qty) if qty.isdigit() else 1
+
+        best_match, product_id = find_best_match(menu_name, menu_db)
 
         if menu_name in detected_menus:
             detected_menus[menu_name] += quantity
