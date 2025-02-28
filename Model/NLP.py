@@ -55,10 +55,10 @@ def get_products_from_db():
 products = get_products_from_db()
 menu_db = {normalize(p["Product_name"]): p["Product_id"] for p in products}  # Dict {ชื่อสินค้า: ID}
           
-def find_best_match(word, menu_db, threshold=80):  # ✅ ลด threshold เป็น 80
-    match, score = process.extractOne(word, menu_db.keys())
+def find_best_match(word, menu_db, threshold=90):  
+    match, score = process.extractOne(word, menu_db.keys(), scorer=fuzz.token_sort_ratio)
 
-    if score >= threshold:  # ✅ ป้องกันการจับคู่ผิด
+    if score >= threshold:  #ป้องกันการจับคู่ผิด
         return match, menu_db[match]
     return None, None
 
@@ -76,10 +76,14 @@ def extract_orders(text):
 
         best_match, product_id = find_best_match(menu_name, menu_db)
 
-        if menu_name in detected_menus:
-            detected_menus[menu_name] += quantity
+        if best_match:
+            if best_match in detected_menus:
+                detected_menus[best_match] += quantity
+            else:
+                detected_menus[best_match] = quantity
         else:
-            detected_menus[menu_name] = quantity
+            sys.stderr.write(f"❌ ไม่พบสินค้าในฐานข้อมูล: {menu_name}\n")  # ✅ ใช้ stderr แทน
+        
 
     for menu, qty in detected_menus.items():
         orders.append({"menu": menu, "quantity": qty})
@@ -96,7 +100,7 @@ if __name__ == "__main__":
         if order["menu"] in menu_db:
             order["product_id"] = menu_db[order["menu"]]
         else:
-            print(f"❌ ไม่พบสินค้าในฐานข้อมูล: {order['menu']}")
+            # print(f"❌ ไม่พบสินค้าในฐานข้อมูล: {order['menu']}")
             order["product_id"] = None  # ถ้าหาไม่เจอให้เป็น None
 
     print(json.dumps(result, ensure_ascii=False))

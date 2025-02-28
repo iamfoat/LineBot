@@ -129,7 +129,7 @@ const generateFlexMenu = (products) => {
         "type": "bubble",
         "hero": {
             "type": "image",
-            "url": `https://a2ca-171-6-142-15.ngrok-free.app/uploads/${product.Product_img}`,
+            "url": `https://0e0b-171-6-142-15.ngrok-free.app/uploads/${product.Product_img}`,
             "size": "full",
             "aspectRatio": "20:13",
             "aspectMode": "cover"
@@ -189,7 +189,7 @@ const sendMenuToLine = async (req = null, res = null) => {
         for (let recipient of recipients) {
             const body = {
                 to: recipient.Customer_id, //ใช้ค่าจาก `Customer_id`
-                messages: [{ type: "flex", altText: "เมนูสินค้าอัปเดตใหม่!", contents: flexMenu }]
+                messages: [{ type: "flex", altText: "ร้านเปิดแล้วค่าา มาสั่งกันเร็วว!", contents: flexMenu }]
             };
 
             try {
