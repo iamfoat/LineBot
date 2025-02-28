@@ -20,7 +20,7 @@ app.use(cors());
 app.use('/api/products', productRoutes);
 app.use("/uploads", express.static("uploads"));
 app.use('/api/orders',orderRoutes)
-app.use('/api/orderitems',orderitemRoutes)
+app.use('/api',orderitemRoutes)
 
 
 const config = {

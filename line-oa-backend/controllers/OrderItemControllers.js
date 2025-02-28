@@ -22,10 +22,43 @@ const getItem = async (req, res) => {
 };
 
 
-const createItem = async (req, res) => {
+const updateOrderStatus = async (req, res) => {
+    const { orderId } = req.params;
+    const { status } = req.body;
 
-}
+    console.log(`🔄 Received orderId: ${orderId}, status: ${status}`);
+
+    if (!orderId || orderId === "undefined") {
+        return res.status(400).json({ error: "Invalid orderId received" });
+    }
+
+    try {
+        await db.query("UPDATE `Order` SET status = ? WHERE Order_id = ?", [status, orderId]);
+        res.status(200).json({ message: `Order ${orderId} status updated to ${status}` });
+    } catch (err) {
+        console.error("Error updating order status:", err);
+        res.status(500).json({ error: "Failed to update order status" });
+    }
+};
+
+
+const updateItemStatus = async (req, res) => {
+    const { orderItemId } = req.params;
+    const { status } = req.body;
+
+    try {
+        await db.query("UPDATE Order_item SET status = ? WHERE Order_item_id = ?", [status, orderItemId]);
+        res.status(200).json({ message: `Order item ${orderItemId} updated to ${status}` });
+    } catch (err) {
+        console.error("Error updating item status:", err);
+        res.status(500).json({ error: "Failed to update item status" });
+    }
+};
+
+
 
 module.exports = {
-    getItem
+    getItem,
+    updateOrderStatus,
+    updateItemStatus
 };

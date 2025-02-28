@@ -32,7 +32,7 @@ const getStatusIcon = (status) => {
     case "Preparing":
       return "🍽️"; 
     case "out for delivery":
-      return "👨‍🍳"; 
+      return "🛵"; 
     case "completed":
       return "✅"; 
     default:

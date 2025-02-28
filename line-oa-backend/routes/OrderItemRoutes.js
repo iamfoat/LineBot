@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { getItem } = require("../controllers/OrderItemControllers");
+const { getItem ,updateOrderStatus,updateItemStatus} = require("../controllers/OrderItemControllers");
 
 
-router.get("/:orderId", getItem);
+router.get("/orderitems/:orderId", getItem);
+router.put("/orderitems/:orderItemId/status", updateItemStatus);
+router.put("/orders/:orderId/status", updateOrderStatus);
+
 module.exports = router;
