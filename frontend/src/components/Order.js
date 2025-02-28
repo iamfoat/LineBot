@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import "../css/Order.css"
 import axios from 'axios';
+import { useNavigate } from "react-router-dom";
+
 
 const ManageOrder = () => {
   const [data, setData] = useState([]); 
+  const navigate = useNavigate();
   
 
 useEffect(() => {
@@ -27,14 +30,18 @@ const formatDate = (dateString) => {
 const getStatusIcon = (status) => {
   switch (status) {
     case "Preparing":
-      return "🍽️"; // ไอคอนอาหารกำลังเตรียม
-    case "Cooking":
-      return "👨‍🍳"; // ไอคอนทำอาหาร
-    case "Completed":
-      return "✅"; // ไอคอนเสร็จสิ้น
+      return "🍽️"; 
+    case "out for delivery":
+      return "👨‍🍳"; 
+    case "completed":
+      return "✅"; 
     default:
-      return "📋"; // ไอคอนทั่วไป
+      return "📋"; 
   }
+};
+
+const handleOrderClick = (orderId) => {
+  navigate(`/orderitems/${orderId}`); 
 };
 
   return (
@@ -61,6 +68,7 @@ const getStatusIcon = (status) => {
                 {data.map((order, index) => (
       
                   <div key={order.Order_id} className="order-card"
+                  onClick={() => handleOrderClick(order.Order_id)}
                   // onMouseEnter={() => setHoveredProduct(index)} // เมื่อเมาส์เลื่อนเข้า
                   // onMouseLeave={() => setHoveredProduct(null)} // เมื่อเมาส์ออก
                   // onTouchStart={() => setHoveredProduct(index)} // เมื่อแตะที่สินค้า
@@ -69,7 +77,7 @@ const getStatusIcon = (status) => {
                     {/* <img src={`https://a2ca-171-6-142-15.ngrok-free.app/uploads/${product.Product_img}`} alt={product.Product_name} /> */}
                     <div className="order-left">
                       <p><strong>Order Id:</strong> {order.Order_id}</p>
-                      <p><strong>Customer Name:</strong> {order.Customer_Name || "ไม่พบชื่อ"}</p>
+                      <p><strong>Customer Name:</strong> {order.Customer_name || "ไม่พบชื่อ"}</p>
                       <p><strong>Shipping Address:</strong> {order.Customer_Address}</p>
                       <p><strong>Amount:</strong> {order.Total_amount} บาท</p>
                       <p><strong>Create at:</strong> {formatDate(order.created_at)}</p>

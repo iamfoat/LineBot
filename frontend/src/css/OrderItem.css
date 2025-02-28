@@ -1,0 +1,73 @@
+
+.header-container {
+    text-align: center;
+    background: #6D4C41; /* สีน้ำตาลเข้ม */
+    color: white;
+    padding: 15px;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.back-button {
+    font-size: 24px;
+    color: white;
+    cursor: pointer;
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-310px);
+}
+
+.order-group {
+    background: #D7CCC8;
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 10px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th, td {
+    border-bottom: 1px solid #A1887F;
+    padding: 10px;
+    text-align: center;
+}
+
+th {
+    background: #6D4C41;
+    font-weight: bold;
+    color: white;
+}
+
+.product-img {
+    width: 50px;
+    height: 50px;
+    border-radius: 5px;
+    object-fit: cover;
+}
+
+.checkbox-container {
+    display: flex;
+    justify-content: center;
+}
+
+.checkbox {
+    width: 24px;
+    height: 24px;
+    border: 2px solid black;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.checkbox.checked {
+    background: black;
+    color: white;
+}

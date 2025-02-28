@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const orderController = require('../controllers/OrderControllers'); // ✅ แก้ชื่อให้ถูก
+const orderController = require('../controllers/OrderControllers'); 
 
 router.get('/', orderController.getOrder);
-router.post('/', orderController.createOrder); // ✅ เพิ่ม API สำหรับสร้างออร์เดอร์
+router.post('/', orderController.createOrder); 
 
 module.exports = router;

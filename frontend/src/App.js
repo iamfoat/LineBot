@@ -3,6 +3,7 @@ import ManageProduct from './components/Product';
 import Order from './components/Order';
 import Ingredient from './components/Ingredient';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import OrderItem from './components/OrderItem';
 
 
 
@@ -25,6 +26,7 @@ function App() {
           <Route path="/" element={<h1>Home Page</h1>} />
           <Route path="/products" element={<ManageProduct />} />
           <Route path="/orders" element={<Order />} />
+          <Route path="/orderitems/:orderId" element={<OrderItem />} />
           <Route path='/Ingredients' element={<Ingredient />} />
         </Routes>
 
