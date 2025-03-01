@@ -59,7 +59,7 @@ const OrderItem = () => {
 
         try {
             //อัปเดตสถานะของรายการสินค้าในฐานข้อมูล
-            await axios.put(`http://localhost:8000/api/orderitems/${orderItemId}/status`, {
+            await axios.put(`http://localhost:8000/api/orderitems/${Number(orderItemId)}/status`, {
                 status: newCheckedState ? "Checked" : "Unchecked",
             });
             console.log(`✅ Order item ${orderItemId} updated to ${newCheckedState ? "Checked" : "Unchecked"}`);

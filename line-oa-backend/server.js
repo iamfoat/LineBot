@@ -109,7 +109,6 @@ app.post('/webhook', async (req, res) => {
                     }
 
                     if (!Array.isArray(orders) || orders.length === 0) {
-                        await client.replyMessage(event.replyToken, { type: "text", text: "ขออภัย ไม่พบสินค้าที่ตรงกับคำสั่งของคุณ" });
                         return;
                     }
 
@@ -120,6 +119,10 @@ app.post('/webhook', async (req, res) => {
                         let price = parseFloat(rows[0].Price);
                         let subtotal = price * order.quantity;
                         totalAmount += subtotal;
+                    }
+
+                    if (totalAmount === 0) {
+                        return; 
                     }
 
                     // ✅ ส่งปุ่มให้ลูกค้ายืนยัน
@@ -188,6 +191,7 @@ app.post('/webhook', async (req, res) => {
 
             if (data.action === "confirm") {
                 try {
+                    
                     // ✅ บันทึกคำสั่งซื้อหลังจากยืนยัน
                     
                     const [orderResult] = await db.query(
@@ -215,7 +219,13 @@ app.post('/webhook', async (req, res) => {
                         );
                     }
 
+                    await client.replyMessage(event.replyToken, {
+                        type: "text",
+                        text: "🏠 กรุณาพิมพ์ที่อยู่ของคุณเพื่อใช้ในการจัดส่ง",
+                    });
+
                     await client.replyMessage(event.replyToken, { type: "text", text: "✅ คำสั่งซื้อของคุณถูกบันทึกเรียบร้อย!" });
+                    
                 } catch (error) {
                     console.error("❌ Error saving order:", error);
                     await client.replyMessage(event.replyToken, { type: "text", text: "เกิดข้อผิดพลาด กรุณาลองใหม่" });
