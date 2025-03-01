@@ -5,7 +5,7 @@ import { FaCheck, FaArrowLeft } from "react-icons/fa";
 import { useParams, useNavigate } from "react-router-dom";
 
 const OrderItem = () => {
-    const { orderId } = useParams();
+    const { orderId } = useParams(); //ดึงค่า orderId จาก url
     console.log("🔄 useParams() received orderId:", orderId);
     const navigate = useNavigate();
     const [orderDetails, setOrderDetails] = useState([]);
@@ -15,12 +15,12 @@ const OrderItem = () => {
     useEffect(() => {
         console.log("🔄 Order ID from URL:", orderId);
         LoadData();
-    }, [orderId]);
+    }, [orderId]); //เรียก LoadData ทุกครั้งที่ orderId เปลี่ยนแปลง
     
 
     const LoadData = async () => {
         if (!orderId) {
-            console.error("❌ Order ID is undefined! API call aborted.");
+            console.error("Order ID is undefined!");
             return;
         }
 
@@ -30,14 +30,14 @@ const OrderItem = () => {
             console.log("API Response:", res.data);
             setOrderDetails(res.data);
 
-            // ✅ โหลดค่าที่ติ๊กไว้จากฐานข้อมูล
+            //โหลดค่าที่ติ๊กไว้จากdb
             const initialCheckedState = {};
             res.data.forEach((item) => {
                 initialCheckedState[item.Order_item_id] = item.status === "Checked";
             });
             setCheckedItems(initialCheckedState);
 
-            // ✅ ตรวจสอบสถานะออเดอร์จาก API
+            //ตรวจสอบสถานะออเดอร์จาก API
             if (res.data.length > 0) {
                 setOrderStatus(res.data[0].Order_status);
             }
@@ -47,27 +47,27 @@ const OrderItem = () => {
         }
     };
 
-    // ✅ ฟังก์ชันอัปเดตสถานะ Checkbox และบันทึกลงฐานข้อมูล
+    //อัปเดตสถานะ Checkbox และบันทึกลงฐานข้อมูล
     const toggleCheck = async (orderItemId) => {
         const newCheckedState = !checkedItems[orderItemId];
 
-        // ✅ อัปเดตสถานะใน state
+        //อัปเดตสถานะใน state
         setCheckedItems((prev) => ({
             ...prev,
             [orderItemId]: newCheckedState,
         }));
 
         try {
-            // ✅ อัปเดตสถานะของรายการสินค้าในฐานข้อมูล
+            //อัปเดตสถานะของรายการสินค้าในฐานข้อมูล
             await axios.put(`http://localhost:8000/api/orderitems/${orderItemId}/status`, {
                 status: newCheckedState ? "Checked" : "Unchecked",
             });
             console.log(`✅ Order item ${orderItemId} updated to ${newCheckedState ? "Checked" : "Unchecked"}`);
         } catch (err) {
-            console.error("❌ Error updating item status:", err);
+            console.error("Error updating item status:", err);
         }
 
-        // ✅ ตรวจสอบว่าทุกช่องถูกติ๊กหมดหรือไม่
+        //ตรวจสอบว่าทุกช่องถูกติ๊ก
         const allChecked = Object.values({ ...checkedItems, [orderItemId]: newCheckedState }).every(value => value === true);
         if (allChecked) {
             updateOrderStatus("Out for Delivery");
@@ -76,22 +76,22 @@ const OrderItem = () => {
         }
     };
 
-    // ✅ ฟังก์ชันอัปเดตสถานะ Order ไปที่ Backend
+    //อัปเดตสถานะ Order ไปที่ Backend
     const updateOrderStatus = async (newStatus) => {
         if (!orderId) {
-            console.error("❌ Order ID is undefined! API call aborted.");
+            console.error("Order ID is undefined!");
             return;
         }
     
         try {
-            console.log(`🔄 Updating order status for Order ID: ${orderId} to ${newStatus}`);
+            console.log(`Updating order status for Order ID: ${orderId} to ${newStatus}`);
     
             await axios.put(`http://localhost:8000/api/orders/${orderId}/status`, { status: newStatus });
     
             setOrderStatus(newStatus);
-            console.log(`✅ Order status updated to ${newStatus}`);
+            console.log(`Order status updated to ${newStatus}`);
         } catch (err) {
-            console.error("❌ Error updating order status:", err);
+            console.error("Error updating order status:", err);
         }
     };
     
