@@ -14,7 +14,7 @@ const getItem = async (req, res) => {
             JOIN Product ON Order_item.Product_id = Product.Product_id
             WHERE Order_item.Order_id = ?`, [orderId]); //ดึงเฉพาะออเดอร์ที่ต้องการ
 
-        res.status(200).json(items); 
+        res.status(200).json(items);
     } catch (err) {
         console.error('Error fetching Order Items:', err);
         res.status(500).json({ error: 'Failed to fetch order items' });
