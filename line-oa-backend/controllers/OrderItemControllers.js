@@ -43,7 +43,6 @@ const SendNotification = async (orderId) => {
         }
 
         const customerId = order[0].Customer_id; 
-        // const lineUserId = customerId
 
         const message = {
             to: customerId, 
