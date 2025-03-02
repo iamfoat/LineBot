@@ -33,7 +33,8 @@ const OrderItem = () => {
             //โหลดค่าที่ติ๊กไว้จากdb
             const initialCheckedState = {};
             res.data.forEach((item) => {
-                initialCheckedState[item.Order_item_id] = item.status === "Checked";
+                console.log(`Item ${item.Order_item_id} status from DB: ${item.status}`); 
+                initialCheckedState[item.Order_item_id] = item.status === "Done";
             });
             setCheckedItems(initialCheckedState);
 
@@ -60,9 +61,9 @@ const OrderItem = () => {
         try {
             //อัปเดตสถานะของรายการสินค้าในฐานข้อมูล
             await axios.put(`http://localhost:8000/api/orderitems/${Number(orderItemId)}/status`, {
-                status: newCheckedState ? "Checked" : "Unchecked",
+                status: newCheckedState ? "Preparing" : "Done",
             });
-            console.log(`✅ Order item ${orderItemId} updated to ${newCheckedState ? "Checked" : "Unchecked"}`);
+            // console.log(`✅ Order item ${orderItemId} updated to ${newCheckedState ? "Done" : "Preparing"}`);
         } catch (err) {
             console.error("Error updating item status:", err);
         }
@@ -84,7 +85,7 @@ const OrderItem = () => {
         }
     
         try {
-            console.log(`Updating order status for Order ID: ${orderId} to ${newStatus}`);
+            // console.log(`Updating order status for Order ID: ${orderId} to ${newStatus}`);
     
             await axios.put(`http://localhost:8000/api/orders/${orderId}/status`, { status: newStatus });
     

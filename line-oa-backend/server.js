@@ -33,7 +33,7 @@ if (!config.channelAccessToken || !config.channelSecret) {
 }
 
 const client = new line.Client(config);
-
+const pendingOrders = {};
 
 
 app.get('/', (req, res) => {
@@ -54,7 +54,6 @@ async function getUserProfile(userId) {
     }
 }
 
-
 app.post('/webhook', async (req, res) => {
     const events = req.body.events;
 
@@ -64,6 +63,7 @@ app.post('/webhook', async (req, res) => {
             let customerId = event.source.userId;
             let customerName = null;
             let customerText = event.message.text;
+            
 
             if (event.source.type === "group") {
                 customerId = event.source.groupId; // ใช้ `groupId` เป็น `Customer_id`
@@ -172,13 +172,68 @@ app.post('/webhook', async (req, res) => {
                             }
                         }
                     };
-
+                    
                     await client.replyMessage(event.replyToken, confirmMessage);
+
                 });
-            } catch (error) {
+
+                
+                if (customerText.toLowerCase() === "แก้ไข") {
+                    // 🔍 ดึง Order ล่าสุดที่สถานะเป็น "Preparing"
+                    const [pendingOrder] = await db.query(
+                        "SELECT Order_id FROM `Order` WHERE Customer_id = ? AND Status = 'Preparing' ORDER BY Order_id DESC LIMIT 1",
+                        [customerId]
+                    );
+                
+                    if (pendingOrder.length > 0) {
+                        await client.replyMessage(event.replyToken, {
+                            type: "text",
+                            text: "📍 กรุณาพิมพ์ที่อยู่ใหม่ของคุณเพื่อใช้ในการจัดส่ง",
+                        });
+                
+                        // ✅ เก็บ Order_id ไว้เพื่อติดตามออเดอร์ที่ต้องแก้ไข
+                        pendingOrders[customerId] = pendingOrder[0].Order_id;
+
+                    } else {
+                        await client.replyMessage(event.replyToken, {
+                            type: "text",
+                            text: "⛔ คุณไม่มีออเดอร์ที่สามารถแก้ไขที่อยู่ได้",
+                        });
+                    }
+                }
+                
+                // ✅ เมื่อลูกค้าพิมพ์ที่อยู่ใหม่ (หลังจากพิมพ์ "แก้ไข")
+                else if (pendingOrders[customerId]) {
+                    let orderId = pendingOrders[customerId];
+                
+                    // 🔄 อัปเดตที่อยู่ในฐานข้อมูล
+                    await db.query(
+                        "UPDATE `Order` SET Customer_Address = ? WHERE Order_id = ?",
+                        [customerText, orderId]
+                    );
+                
+                    // 🚀 แจ้งให้ลูกค้าทราบว่าที่อยู่ถูกอัปเดตแล้ว
+                    await client.replyMessage(event.replyToken, {
+                        type: "text",
+                        text: `🏠ที่อยู่ของคุณได้รับการอัปเดตเป็น:\n${customerText}`,
+                    });
+                
+                    await client.pushMessage(customerId, {
+                        type: "text",
+                        text: `📦 ที่อยู่ของคุณถูกอัปเดตเรียบร้อย!\nร้านค้ากำลังทำรายการสั่งซื้อ\nหากต้องการแก้ไขที่อยู่ พิมพ์ "แก้ไข"`,
+                    });
+                
+                    // ✅ ล้างค่าหน่วยความจำ
+                    delete pendingOrders[customerId];
+                }
+                
+                
+                
+            }catch (error) {
                 console.error("❌ Error handling order request:", error);
             }
-        } 
+
+        }
 
         else if (event.type === "postback") {
             let data;
@@ -218,13 +273,17 @@ app.post('/webhook', async (req, res) => {
                             [orderId, order.product_id, order.quantity, subtotal]
                         );
                     }
-
+                    
                     await client.replyMessage(event.replyToken, {
                         type: "text",
-                        text: "🏠 กรุณาพิมพ์ที่อยู่ของคุณเพื่อใช้ในการจัดส่ง",
+                        text: "กรุณาพิมพ์ที่อยู่ของคุณเพื่อใช้ในการจัดส่ง",
                     });
+                    
+        
+                    // console.log("Reply Token:", event.replyToken);
 
-                    await client.replyMessage(event.replyToken, { type: "text", text: "✅ คำสั่งซื้อของคุณถูกบันทึกเรียบร้อย!" });
+                    // await client.pushMessage(data.customerId, {type: "text", text: "✅ คำสั่งซื้อของคุณถูกบันทึกเรียบร้อย!",});
+                    pendingOrders[data.customerId] = orderId;
                     
                 } catch (error) {
                     console.error("❌ Error saving order:", error);
@@ -268,8 +327,8 @@ function handleEvent(event) {
     }
 })();
 
-cron.schedule("0 12 * * *", async () => {
-    console.log("📅 [CRON JOB] กำลังส่งเมนูสินค้าไปยังลูกค้า...");
+cron.schedule("0 */8 * * *", async () => {
+    console.log("กำลังส่งเมนูสินค้าไปยังลูกค้า...");
     try {
         await sendMenuToLine(); // เรียกใช้ฟังก์ชันส่งเมนู
     } catch (error) {

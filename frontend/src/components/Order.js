@@ -31,7 +31,7 @@ const getStatusIcon = (status) => {
   switch (status) {
     case "Preparing":
       return "🍽️"; 
-    case "out for delivery":
+    case "Out for Delivery":
       return "🛵"; 
     case "completed":
       return "✅"; 
