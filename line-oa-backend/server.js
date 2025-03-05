@@ -90,6 +90,7 @@ app.post('/webhook', async (req, res) => {
                     [customerId, customerName]
                 );
                 console.log(`✅ บันทึก ${customerId} ลงฐานข้อมูลเรียบร้อย`);
+                console.log(customerText);
 
                 // ✅ 2. เรียก Model วิเคราะห์คำสั่งซื้อ
                 const modelPath = path.join(__dirname, "..", "Model", "NLP.py");
@@ -98,10 +99,11 @@ app.post('/webhook', async (req, res) => {
                         console.error("❌ Error running model:", error);
                         return;
                     }
-
+                    
                     let orders;
                     try {
                         orders = JSON.parse(stdout);
+                        console.log(orders)
                     } catch (parseError) {
                         console.error("❌ JSON Parse Error:", parseError);
                         await client.replyMessage(event.replyToken, { type: "text", text: "เกิดข้อผิดพลาด กรุณาลองใหม่" });
