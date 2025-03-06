@@ -35,22 +35,6 @@ const IngredientItem = () => {
         }
     };
 
-    const toggleCheck = async (batchCode) => {
-        const newCheckedState = !checkedItems[batchCode];
-
-        setCheckedItems((prev) => ({
-            ...prev,
-            [batchCode]: newCheckedState,
-        }));
-
-        try {
-            await axios.put(`http://localhost:8000/api/ingredientitems/${batchCode}/status`, {
-                Quantity: newCheckedState ? 0 : 1, // สมมติว่า 0 หมายถึงหมดสต็อก
-            });
-        } catch (err) {
-            console.error("Error updating ingredient status:", err);
-        }
-    };
 
 
     return (
@@ -68,7 +52,6 @@ const IngredientItem = () => {
                                 <th>Batch Code</th>
                                 <th>Quantity</th>
                                 <th>Expiry Date</th>
-                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>

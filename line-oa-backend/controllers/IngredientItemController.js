@@ -20,36 +20,56 @@ const GetIngredientItems = async (req, res) => {
 
 const AddStockWithBatch = async (req, res) => {
     try {
-        const { Ingredient_id, Batch_code, Quantity, Expiry_date } = req.body;
+        const { Ingredient_name, Batch_code, Quantity, Expiry_date } = req.body;
 
-        if (!Ingredient_id || !Batch_code || Quantity == null || !Expiry_date) {
+        if (!Ingredient_name || !Batch_code || Quantity == null || !Expiry_date) {
             return res.status(400).json({ error: "กรุณาระบุข้อมูลให้ครบถ้วน" });
         }
 
         await db.query("START TRANSACTION");
 
+        const [ingredient] = await db.query(
+            "SELECT Ingredient_id FROM `Ingredient` WHERE Ingredient_name = ?",
+            [Ingredient_name]
+        );
+
+        if (ingredient.length === 0) {
+            await db.query("ROLLBACK");
+            return res.status(404).json({ error: "ไม่พบวัตถุดิบในระบบ" });
+        }
+
+        const Ingredient_id = ingredient[0].Ingredient_id;
+
+        //อัปเดต `Ingredient` โดยเพิ่ม `Quantity`
         await db.query(
             "UPDATE `Ingredient` SET Quantity = Quantity + ?, Updated_at = NOW() WHERE Ingredient_id = ?",
             [Quantity, Ingredient_id]
         );
 
-        await db.query(
+        //เพิ่ม `ingredient_item`
+        const [result] = await db.query(
             "INSERT INTO `Ingredient_item` (Ingredient_id, Batch_code, Quantity, Expiry_date) VALUES (?, ?, ?, ?)",
             [Ingredient_id, Batch_code, Quantity, Expiry_date]
         );
+
+        if (result.affectedRows === 0) {
+            await db.query("ROLLBACK");
+            return res.status(500).json({ error: "เกิดข้อผิดพลาด ไม่สามารถเพิ่มวัตถุดิบลง `Ingredient_item` ได้" });
+        }
 
         await db.query("COMMIT");
 
         res.status(200).json({ 
             message: "เพิ่มสต็อกและบันทึก Batch สำเร็จ ✅", 
+            Ingredient_id,
+            Batch_code,
             added_quantity: Quantity,
-            batch: Batch_code,
             expiry: Expiry_date
         });
 
     } catch (error) {
         await db.query("ROLLBACK");
-        console.error("❌ Error updating stock:", error);
+        console.error("❌ Error adding stock:", error);
         res.status(500).json({ error: "เกิดข้อผิดพลาด ไม่สามารถเพิ่มสต็อกได้" });
     }
 };
@@ -70,31 +90,8 @@ const GetStockHistory = async (req, res) => {
     }
 };
 
-const UpdateStockStatus = async (req, res) => {
-    try {
-        const { batchCode } = req.params;
-        const { Quantity } = req.body;
-
-        const [updateResult] = await db.query(
-            "UPDATE `Ingredient_item` SET Quantity = ? WHERE Batch_code = ?",
-            [Quantity, batchCode]
-        );
-
-        if (updateResult.affectedRows === 0) {
-            return res.status(404).json({ error: "ไม่พบวัตถุดิบที่ต้องการอัปเดต" });
-        }
-
-        res.status(200).json({ message: "อัปเดตสถานะสำเร็จ ✅" });
-
-    } catch (error) {
-        console.error("❌ Error updating ingredient item:", error);
-        res.status(500).json({ error: "เกิดข้อผิดพลาด ไม่สามารถอัปเดตสต็อกได้" });
-    }
-};
-
-
 module.exports = { 
-    AddStockWithBatch,
+     AddStockWithBatch,
      GetStockHistory,
      GetIngredientItems 
     };
