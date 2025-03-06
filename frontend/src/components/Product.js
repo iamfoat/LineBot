@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import "../css/Product.css"; 
 import axios from 'axios';
 import { FaEdit, FaTrash } from "react-icons/fa";
+import Select from "react-select";
+
+
 
 
 const ManageProduct = () => {
@@ -11,20 +14,35 @@ const ManageProduct = () => {
   const [data, setData] = useState([]); 
   const [hoveredProduct, setHoveredProduct] = useState(null);
   const [editProduct, setEditProduct] = useState(null);
+  const [ingredients, setIngredients] = useState([]); 
+  const [selectedIngredients, setSelectedIngredients] = useState([]); 
   
 
   useEffect(() => {
-    LoadData()
-    // axios.get("http://localhost:8000/api/products")
-    //   .then((response) => {
-        
-    //     setProducts(response.data); // 📌 ตั้งค่า products จาก API
-    //     console.log(response.data)
-    //   })
-    //   .catch((error) => {
-    //     console.error("Error fetching products:", error);
-    //   });
+    LoadData();
+    LoadIngredients();
   }, []);
+
+
+  const LoadData = async () => {
+    try {
+        const res = await axios.get('http://localhost:8000/api/products');
+        setData(res.data);  //update state
+    } catch (err) {
+        console.error("Error fetching products:", err);
+    }
+  };
+
+  const LoadIngredients = async () => {
+    try {
+        const res = await axios.get("http://localhost:8000/api/ingredients");
+        setIngredients(res.data);
+    } catch (err) {
+        console.error("Error fetching ingredients:", err);
+    }
+};
+
+
 
   const handleInputChange = (e) => {
     const { name, value, type, files } = e.target;
@@ -43,49 +61,6 @@ const ManageProduct = () => {
     }
 };
 
-
-const handleAddProduct = () => {
-  if (!newProduct.name || !newProduct.price || !newProduct.image) {
-      alert("Please fill in all fields!");
-      return;
-  }
-
-  const formData = new FormData();
-  formData.append("productName", newProduct.name);  //ชื่อ key ต้องตรงกับ API
-  formData.append("price", newProduct.price);
-  formData.append("description", newProduct.description);
-  formData.append("productImg", newProduct.image);
-
-  axios.post("http://localhost:8000/api/products", formData, {  //ส่งข้อมูลไปยัง API
-    headers: { "Content-Type": "multipart/form-data" },
-})
-.then((response) => {  //ส่งข้อมูลสำเร็จ then จะทำงาน
-    console.log("Response Data:", response.data);
-
-    if (response.data && response.data.product) {  //เช็คว่า API ส่งข้อมูลกลับมาถูกต้อง
-        setProducts((prevProducts) => [...prevProducts, response.data.product]);
-        setNewProduct({ name: "", price: "", image: "", description: "" });
-        alert("Product added successfully!");
-        setShowForm(false);
-        LoadData();
-    } else {
-        console.error("Invalid response:", response.data);
-    }
-})
-.catch((error) => {
-    console.error("Error adding product:", error.response ? error.response.data : error);
-});
-};
-
-const LoadData = async () => {
-  try {
-      const res = await axios.get('http://localhost:8000/api/products');
-      setData(res.data);  //update state
-  } catch (err) {
-      console.error("Error fetching products:", err);
-  }
-};
-
 const handleEditProduct = (product) => { //คอลัมน์แรกคือชื่อที่ใช้ใน react
   setEditProduct({
     id: product.Product_id, // ใช้ id จากฐานข้อมูล
@@ -93,20 +68,24 @@ const handleEditProduct = (product) => { //คอลัมน์แรกคื�
     price: product.Price, 
     description: product.Description,
     image: product.Product_img, // เก็บภาพเดิม
-    newImage: null 
+    newImage: null, 
+    ingredient: product.Ingredient_id
   });
 };
 
 
 const handleSaveEdit = async () => {
   try {
+    console.log("📌 Ingredients before sending:", selectedIngredients); // ✅ ตรวจสอบค่าก่อนส่ง
+
     const formData = new FormData();
     formData.append("productName", editProduct.name);
     formData.append("price", editProduct.price);
     formData.append("description", editProduct.description);
+    formData.append("ingredients", JSON.stringify(selectedIngredients)); // ✅ ส่ง JSON ไป Backend
     
     if (editProduct.newImage) {
-      formData.append("productImg", editProduct.newImage); // ถ้ามีรูปใหม่ให้ส่งไป
+      formData.append("productImg", editProduct.newImage); // ✅ ถ้ามีรูปใหม่ให้ส่งไป
     }
 
     await axios.put(`http://localhost:8000/api/products/${editProduct.id}`, formData, {
@@ -114,12 +93,13 @@ const handleSaveEdit = async () => {
     });
 
     alert("Product updated successfully!");
-    setEditProduct(null); // ปิดฟอร์ม
-    await LoadData(); // โหลดข้อมูลใหม่
+    setEditProduct(null); // ✅ ปิดฟอร์มแก้ไข
+    await LoadData(); // ✅ โหลดข้อมูลใหม่
   } catch (error) {
-    console.error("Error updating product:", error);
+    console.error("🚨 Error updating product:", error);
   }
 };
+
 
 const handleDeleteProduct = async (id) => {
   if (window.confirm("You want to delete?")) {
@@ -133,6 +113,82 @@ const handleDeleteProduct = async (id) => {
   }
 };
 
+const ingredientOptions = ingredients.map((ingredient) => ({
+    value: ingredient.Ingredient_id,
+    label: ingredient.Ingredient_name,
+}));
+
+const handleIngredientChange = (selectedOptions) => {
+    const selectedIds = selectedOptions ? selectedOptions.map(option => ({
+        Ingredient_id: option.value,
+        Quantity_used: 1
+    })) : [];
+
+    setSelectedIngredients(selectedIds);
+    console.log("✅ Updated Ingredients:", selectedIds);
+};
+
+
+
+
+
+
+
+useEffect(() => {
+  console.log("🔥 Selected Ingredients Updated (useEffect):", JSON.stringify(selectedIngredients, null, 2));
+}, [selectedIngredients]);
+
+const handleAddProduct = () => {
+  console.log("📌 selectedIngredients Type:", typeof selectedIngredients);
+  console.log("📌 selectedIngredients Instance:", Array.isArray(selectedIngredients));
+  console.log("📌 selectedIngredients Before Sending:", JSON.stringify(selectedIngredients, null, 2));
+
+  if (!Array.isArray(selectedIngredients) || selectedIngredients.length === 0) {
+      console.error("🚨 No Ingredients Found!", selectedIngredients);
+      alert("Please select at least one ingredient!");
+      return;
+  }
+
+  actuallyAddProduct();
+};
+
+
+
+
+const actuallyAddProduct = () => {
+  const formData = new FormData();
+  formData.append("productName", newProduct.name);
+  formData.append("price", newProduct.price);
+  formData.append("description", newProduct.description);
+  formData.append("productImg", newProduct.image);
+  formData.append("ingredients", JSON.stringify(selectedIngredients)); // ✅ บังคับให้ส่ง JSON string
+
+  console.log("📌 Sending FormData to Backend:");
+  for (let pair of formData.entries()) {
+      console.log(pair[0], pair[1]); // ✅ ตรวจสอบค่าที่ถูกส่งไป
+  }
+
+  axios.post("http://localhost:8000/api/products", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+  })
+  .then((response) => {
+      console.log("✅ Response Data:", response.data);
+      setNewProduct({ name: "", price: "", image: "", description: "" });
+      setSelectedIngredients([]); // รีเซ็ตข้อมูลหลังเพิ่มสินค้า
+      setShowForm(false);
+      LoadData();
+  })
+  .catch((error) => {
+      console.error("❌ Error adding product:", error.response ? error.response.data : error);
+  });
+};
+
+
+
+
+
+
+
 const sendMenuToLine = async () => {
   try {
       await axios.post("http://localhost:8000/api/products/send-menu");
@@ -142,6 +198,11 @@ const sendMenuToLine = async () => {
       alert("ไม่สามารถส่งเมนูได้!");
   }
 };
+
+console.log("📌 selectedIngredients Type:", typeof selectedIngredients);
+console.log("📌 selectedIngredients Instance:", selectedIngredients instanceof Array);
+console.log("📌 selectedIngredients Before Sending:", JSON.stringify(selectedIngredients, null, 2));
+
 
 
 
@@ -191,6 +252,8 @@ const sendMenuToLine = async () => {
 
             </div>
           ))}
+
+          
         </div>
       </div>
       </div>
@@ -208,6 +271,25 @@ const sendMenuToLine = async () => {
             <input type="number" name="price" placeholder="Price" value={newProduct.price} onChange={handleInputChange}/>
             <input type="text" name="description" placeholder="description" value={newProduct.description} onChange={handleInputChange}/>
             <input type="file" accept="image/*" onChange={handleInputChange} />
+
+            <div className="ingredient-selection">
+            <h3>เลือกวัตถุดิบ</h3>
+            <div className="ingredient-list">
+            <select
+              multiple
+              value={selectedIngredients.map(i => i.Ingredient_id)}
+              onChange={(e) => handleIngredientChange([...e.target.selectedOptions].map(option => parseInt(option.value)))}
+            >
+              {ingredients.map((ingredient) => (
+                  <option key={ingredient.Ingredient_id} value={ingredient.Ingredient_id}>
+                      {ingredient.Ingredient_name}
+                  </option>
+              ))}
+          </select>
+
+            </div>
+        </div>
+
             <button onClick={handleAddProduct}>Add</button>
             <button onClick={() => setShowForm(false)}>Cancel</button>
           </div>
@@ -237,6 +319,25 @@ const sendMenuToLine = async () => {
             accept="image/*"
             onChange={(e) => setEditProduct({ ...editProduct, newImage: e.target.files[0] })}
             />
+
+            <div className="ingredient-selection">
+                <h3>เลือกวัตถุดิบ</h3>
+                <div className="ingredient-list">
+                <select
+                    multiple
+                    value={selectedIngredients.map(i => i.Ingredient_id)}
+                    onChange={(e) => handleIngredientChange([...e.target.selectedOptions].map(option => parseInt(option.value)))}
+                >
+                    {ingredients.map((ingredient) => (
+                        <option key={ingredient.Ingredient_id} value={ingredient.Ingredient_id}>
+                            {ingredient.Ingredient_name}
+                        </option>
+                    ))}
+                </select>
+
+                </div>
+            </div>
+
 
             <button onClick={handleSaveEdit}>Save</button>
             <button onClick={() => setEditProduct(null)}>Cancel</button>

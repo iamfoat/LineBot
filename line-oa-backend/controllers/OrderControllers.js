@@ -25,34 +25,86 @@ const getOrder = async (req, res) => {
 
 const createOrder = async (req, res) => {
     try {
-        const { Customer_name, Customer_Address, Total_amount, Status } = req.body;
-        if (!Customer_name || !Customer_Address || !Total_amount || !Status) {
-            return res.status(400).json({ error: 'Missing required fields' });
+        const { customerName, productId, quantityOrdered } = req.body;
+
+        if (!customerName || !productId || quantityOrdered == null || quantityOrdered <= 0) {
+            return res.status(400).json({ error: "กรุณากรอกข้อมูลให้ครบถ้วน" });
         }
 
-        // ค้นหา Customer_id จาก Customer_name
-        const [customer] = await db.query('SELECT Customer_id FROM `Customer` WHERE Customer_name = ?', [Customer_name]);
+        await db.query("START TRANSACTION");
 
-        if (customer.length === 0) {
-            return res.status(400).json({ error: 'Customer not found' });
+        // ✅ 1. บันทึก Order
+        const [orderResult] = await db.query(
+            "INSERT INTO `Order` (Customer_name, Product_id, Quantity, Order_date) VALUES (?, ?, ?, NOW())",
+            [customerName, productId, quantityOrdered]
+        );
+
+        const orderId = orderResult.insertId;
+
+        // ✅ 2. ค้นหาวัตถุดิบที่ต้องใช้ใน Product
+        const [ingredients] = await db.query(
+            `SELECT pi.Ingredient_id, pi.Quantity_used, ii.Item_id, ii.Quantity AS batch_quantity
+             FROM Product p
+             JOIN Product_Ingredient pi ON p.Product_id = pi.Product_id
+             JOIN Ingredient_item ii ON pi.Ingredient_id = ii.Ingredient_id
+             WHERE p.Product_id = ?
+             ORDER BY ii.Expiry_date ASC`, // ✅ ใช้วัตถุดิบที่หมดอายุก่อน
+            [productId]
+        );
+
+        if (ingredients.length === 0) {
+            await db.query("ROLLBACK");
+            return res.status(404).json({ error: "ไม่พบวัตถุดิบสำหรับสินค้านี้" });
         }
 
-        const Customer_id = customer[0].Customer_id;
+        // ✅ 3. ตรวจสอบวัตถุดิบคงเหลือ
+        let totalRequired = 0;
+        for (const ingredient of ingredients) {
+            totalRequired += ingredient.Quantity_used * quantityOrdered;
+            if (ingredient.batch_quantity < totalRequired) {
+                await db.query("ROLLBACK");
+                return res.status(400).json({
+                    error: `วัตถุดิบไม่เพียงพอ (Ingredient ID ${ingredient.Ingredient_id}) ต้องใช้ ${totalRequired}, คงเหลือ ${ingredient.batch_quantity}`
+                });
+            }
+        }
 
-        // กำหนดค่า created_at เป็นเวลาปัจจุบัน
-        const created_at = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        // ✅ 4. หักจำนวนวัตถุดิบจาก `Ingredient_item`
+        for (const ingredient of ingredients) {
+            let required = ingredient.Quantity_used * quantityOrdered;
+            let batch_quantity = ingredient.batch_quantity;
 
-        // บันทึกข้อมูลลงตาราง Order
-        const query = 'INSERT INTO `Order` (Customer_id, Customer_Address, Total_amount, created_at, Status) VALUES (?, ?, ?, ?, ?)';
-        const values = [Customer_id, Customer_Address, Total_amount, created_at, Status];
+            while (required > 0 && batch_quantity > 0) {
+                if (batch_quantity >= required) {
+                    await db.query(
+                        "UPDATE Ingredient_item SET Quantity = Quantity - ? WHERE Item_id = ?",
+                        [required, ingredient.Item_id]
+                    );
+                    required = 0;
+                } else {
+                    await db.query(
+                        "UPDATE Ingredient_item SET Quantity = 0 WHERE Item_id = ?",
+                        [ingredient.Item_id]
+                    );
+                    required -= batch_quantity;
+                }
+            }
+        }
 
-        await db.query(query, values);
-        res.status(201).json({ message: 'Order created successfully' });
-    } catch (err) {
-        console.error('Error creating order:', err);
-        res.status(500).json({ error: 'Failed to create order' });
+        await db.query("COMMIT");
+
+        res.status(200).json({
+            message: "สร้างออเดอร์สำเร็จ และหักวัตถุดิบแล้ว ✅",
+            orderId: orderId
+        });
+
+    } catch (error) {
+        await db.query("ROLLBACK");
+        console.error("❌ Error creating order:", error);
+        res.status(500).json({ error: "เกิดข้อผิดพลาด ไม่สามารถสร้างออเดอร์ได้" });
     }
 };
+
 
 
 module.exports = {

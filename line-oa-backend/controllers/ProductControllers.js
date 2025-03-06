@@ -16,45 +16,87 @@ const config = {
 };
 
 
-const getProducts = async (req , res) => { //ดึงสินค้า
+const getProducts = async (req, res) => {
     try {
-        const [products] = await db.query('SELECT * From Product');
-        res.status(200).json(products);
+        const [products] = await db.query("SELECT * FROM Product");
+        
+        console.log("📌 Products from DB:", products);
+
+        const formattedProducts = products.map(product => {
+            console.log("📌 Raw Ingredient_id:", product.Ingredient_id);
+
+            let ingredientsArray;
+            try {
+                // ✅ เช็คก่อนว่า Ingredient_id เป็น JSON String หรือไม่
+                ingredientsArray = typeof product.Ingredient_id === "string"
+                    ? JSON.parse(product.Ingredient_id)
+                    : product.Ingredient_id;
+            } catch (err) {
+                console.error("🚨 Error parsing Ingredient_id:", err);
+                ingredientsArray = [];
+            }
+
+            return {
+                ...product,
+                Ingredient_id: ingredientsArray, // ✅ ส่งเป็น `array` กลับไปให้ Frontend
+            };
+        });
+
+        res.json(formattedProducts);
     } catch (err) {
-        console.error('Error fetching Product: ', err);
-        res.status(500).json({ error: 'Failed to fetch products' })
+        console.error("🚨 Error fetching products:", err);
+        res.status(500).json({ error: "Failed to fetch products" });
     }
 };
 
+
+
 const createProduct = async (req, res) => {
+    console.log("📌 Request Body:", req.body);
+    console.log("📌 Request File:", req.file);
+
     try {
-        const { productName, price, description } = req.body;
+        const { productName, price, description, ingredients } = req.body;
         const productImg = req.file ? req.file.filename : null;
 
-        if (!productName || !price || !productImg) {
+        if (!productName || !price || !ingredients) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
-        const [result] = await db.query(
-            'INSERT INTO Product (Product_name, Price, Product_img, Description) VALUES (?, ?, ?, ?)',
-            [productName, price, productImg, description]
+        let ingredientsArray;
+        try {
+            ingredientsArray = typeof ingredients === "string" ? JSON.parse(ingredients) : ingredients;
+            if (!Array.isArray(ingredientsArray)) throw new Error("Ingredients is not an array");
+        } catch (err) {
+            return res.status(400).json({ error: "Invalid ingredients format", details: err.message });
+        }
+
+        const ingredientsJson = JSON.stringify(ingredientsArray); // ✅ บันทึกเป็น JSON String
+
+        const [productResult] = await db.query(
+            'INSERT INTO Product (Product_name, Price, Product_img, Description, Ingredient_id) VALUES (?, ?, ?, ?, ?)',
+            [productName, price, productImg, description, ingredientsJson]
         );
 
-        res.status(201).json({  //ส่งกลับไปที่ React
-            message: 'Product created',
+        res.status(201).json({
+            message: 'Product created successfully with ingredients',
             product: {
-                id: result.insertId,
+                id: productResult.insertId,
                 name: productName,
-                price: price,
-                image: productImg,
-                description: description
+                price,
+                description,
+                ingredients: ingredientsArray
             }
         });
     } catch (err) {
         console.error('Error creating product:', err);
-        res.status(500).json({ error: 'Failed to create product' })
+        res.status(500).json({ error: 'Failed to create product' });
     }
 };
+
+
+
+
 
 
 const deleteProduct = async (req, res) => {
@@ -123,6 +165,7 @@ const updateProduct = async (req, res) => {
         res.status(500).json({ error: 'Failed to update product' });
     }
 };
+
 
 const generateFlexMenu = (products) => {
     const contents = products.map((product) => ({

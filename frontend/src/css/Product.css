@@ -204,7 +204,7 @@ body {
     text-align: center;
 }
 
-.modal-content input {
+.modal-content input:not(.ingredient-quantity) {
     width: 100%;
     padding: 0px;
     margin: 10px 0;
@@ -213,7 +213,6 @@ body {
     border-radius: 5px;
     background-color: #FFF3E4;
     border: 2px solid #3E2723;
-    
 }
 
 .modal-content button {
@@ -225,6 +224,56 @@ body {
     width: 60px;
     height: 40px;
     border-radius: 10px;
+}
+
+.ingredient-selection {
+    text-align: center;
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.ingredient-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px; /* เพิ่มระยะห่างระหว่างแต่ละวัตถุดิบ */
+}
+
+.ingredient-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: #f7e5d1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    width: 200px;
+    justify-content: space-between;
+}
+
+.ingredient-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    color: #6b4226;
+}
+
+.ingredient-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #6b4226; /* เปลี่ยนสี Checkbox */
+}
+
+.ingredient-quantity {
+    width: 100px;
+    padding: 4px;
+    border: 1px solid #d1a07c;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 14px;
 }
 
 
@@ -254,3 +303,6 @@ body {
         display: block;
     }
 }
+
+
+

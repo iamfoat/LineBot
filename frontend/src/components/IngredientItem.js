@@ -45,7 +45,7 @@ const IngredientItem = () => {
 
             <div className="contentIngredientItem">
                 <div className="ingredient-group">
-                    <h2>Ingredient #{ingredientName} - Stock Details</h2>
+                    <h2>Ingredient: {ingredientName} - Stock Details</h2>
                     <table className="ingredientitem-table">
                         <thead>
                             <tr>
