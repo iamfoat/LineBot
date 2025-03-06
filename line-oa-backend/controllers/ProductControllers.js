@@ -19,28 +19,11 @@ const config = {
 const getProducts = async (req, res) => {
     try {
         const [products] = await db.query("SELECT * FROM Product");
-        
-        console.log("📌 Products from DB:", products);
+        const formattedProducts = products.map(product => ({
+  ...product,
+  Ingredient_id: JSON.stringify(product.Ingredient_id) // ✅ บังคับให้เป็น JSON string
+}));
 
-        const formattedProducts = products.map(product => {
-            console.log("📌 Raw Ingredient_id:", product.Ingredient_id);
-
-            let ingredientsArray;
-            try {
-                // ✅ เช็คก่อนว่า Ingredient_id เป็น JSON String หรือไม่
-                ingredientsArray = typeof product.Ingredient_id === "string"
-                    ? JSON.parse(product.Ingredient_id)
-                    : product.Ingredient_id;
-            } catch (err) {
-                console.error("🚨 Error parsing Ingredient_id:", err);
-                ingredientsArray = [];
-            }
-
-            return {
-                ...product,
-                Ingredient_id: ingredientsArray, // ✅ ส่งเป็น `array` กลับไปให้ Frontend
-            };
-        });
 
         res.json(formattedProducts);
     } catch (err) {
@@ -118,53 +101,46 @@ const deleteProduct = async (req, res) => {
 
 
 const updateProduct = async (req, res) => {
-    const { id } = req.params;
-    const { productName, price, description } = req.body;
-    const productImg = req.file ? req.file.filename : null; // ถ้ามีไฟล์ใหม่ให้ใช้ไฟล์ใหม่
-
     try {
-        const [product] = await db.query('SELECT * FROM Product WHERE Product_id = ?', [id]);
-        if (product.length === 0) {
-            return res.status(404).json({ error: 'Product not found' });
+        const { productName, price, description, ingredients } = req.body;
+        const productId = req.params.id;
+        const productImg = req.file ? req.file.filename : null;
+
+        console.log("📌 Ingredients received from frontend:", ingredients);
+
+        let ingredientsJson;
+        try {
+            // ✅ ตรวจสอบว่า ingredients เป็น JSON String จริงๆ
+            if (typeof ingredients === "string") {
+                ingredientsJson = JSON.stringify(JSON.parse(ingredients));
+            } else {
+                console.error("🚨 Invalid ingredients format received:", ingredients);
+                return res.status(400).json({ error: "Invalid ingredients format" });
+            }
+        } catch (err) {
+            return res.status(400).json({ error: "Invalid JSON format in ingredients", details: err.message });
         }
 
-        const updateFields = [];
-        const updateValues = [];
+        let query = `UPDATE Product SET Product_name = ?, Price = ?, Description = ?, Ingredient_id = ?`;
+        let values = [productName, price, description, ingredientsJson];
 
-        if (productName) {
-            updateFields.push("Product_name = ?");
-            updateValues.push(productName);
-        }
-        if (price) {
-            updateFields.push("Price = ?");
-            updateValues.push(price);
-        }
-        if (description) {
-            updateFields.push("Description = ?");
-            updateValues.push(description);
-        }
-        if (productImg) { // อัปเดตรูปภาพถ้ามีไฟล์ใหม่
-            updateFields.push("Product_img = ?");
-            updateValues.push(productImg);
+        if (productImg) {
+            query += `, Product_img = ?`;
+            values.push(productImg);
         }
 
-        if (updateFields.length === 0) {
-            return res.status(400).json({ error: "No fields to update" });
-        }
+        query += ` WHERE Product_id = ?`;
+        values.push(productId);
 
-        updateValues.push(id); // ใส่ id เป็นเงื่อนไขท้ายสุด
+        await db.query(query, values);
 
-        await db.query(
-            `UPDATE Product SET ${updateFields.join(", ")} WHERE Product_id = ?`,
-            updateValues
-        );
-
-        res.status(200).json({ message: 'Product updated' });
-    } catch (err) {
-        console.error('Error updating product:', err);
-        res.status(500).json({ error: 'Failed to update product' });
+        res.status(200).json({ message: "✅ Product updated successfully!" });
+    } catch (error) {
+        console.error("🚨 Error updating product:", error);
+        res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
 
 
 const generateFlexMenu = (products) => {

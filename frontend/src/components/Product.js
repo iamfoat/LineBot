@@ -23,6 +23,13 @@ const ManageProduct = () => {
     LoadIngredients();
   }, []);
 
+  useEffect(() => {
+    if (editProduct) {
+        console.log("📌 Loading ingredients for edit:", editProduct.ingredient);
+        setSelectedIngredients(editProduct.ingredient ? JSON.parse(editProduct.ingredient) : []);
+    }
+}, [editProduct]);
+
 
   const LoadData = async () => {
     try {
@@ -76,14 +83,13 @@ const handleEditProduct = (product) => { //คอลัมน์แรกคื�
 
 const handleSaveEdit = async () => {
   try {
-    console.log("📌 Ingredients before sending:", selectedIngredients); // ✅ ตรวจสอบค่าก่อนส่ง
 
     const formData = new FormData();
     formData.append("productName", editProduct.name);
     formData.append("price", editProduct.price);
     formData.append("description", editProduct.description);
-    formData.append("ingredients", JSON.stringify(selectedIngredients)); // ✅ ส่ง JSON ไป Backend
-    
+    formData.append("ingredients", JSON.stringify(selectedIngredients)); // ✅ ต้องเป็น JSON String
+
     if (editProduct.newImage) {
       formData.append("productImg", editProduct.newImage); // ✅ ถ้ามีรูปใหม่ให้ส่งไป
     }
@@ -99,6 +105,7 @@ const handleSaveEdit = async () => {
     console.error("🚨 Error updating product:", error);
   }
 };
+
 
 
 const handleDeleteProduct = async (id) => {
@@ -119,20 +126,17 @@ const ingredientOptions = ingredients.map((ingredient) => ({
 }));
 
 const handleIngredientChange = (selectedOptions) => {
-    const selectedIds = selectedOptions ? selectedOptions.map(option => ({
-        Ingredient_id: option.value,
-        Quantity_used: 1
-    })) : [];
+  const selectedIds = selectedOptions ? selectedOptions.map(option => ({
+      Ingredient_id: option.value,
+      Quantity_used: 1
+  })) : [];
 
-    setSelectedIngredients(selectedIds);
-    console.log("✅ Updated Ingredients:", selectedIds);
+  setSelectedIngredients(selectedIds);
+  console.log("✅ Updated Ingredients:", selectedIds);
 };
 
 
 const handleAddProduct = () => {
-  console.log("📌 selectedIngredients Type:", typeof selectedIngredients);
-  console.log("📌 selectedIngredients Instance:", Array.isArray(selectedIngredients));
-  console.log("📌 selectedIngredients Before Sending:", JSON.stringify(selectedIngredients, null, 2));
 
   if (!Array.isArray(selectedIngredients) || selectedIngredients.length === 0) {
       console.error("🚨 No Ingredients Found!", selectedIngredients);
@@ -142,8 +146,6 @@ const handleAddProduct = () => {
 
   actuallyAddProduct();
 };
-
-
 
 
 const actuallyAddProduct = () => {
@@ -177,9 +179,6 @@ const actuallyAddProduct = () => {
 
 
 
-
-
-
 const sendMenuToLine = async () => {
   try {
       await axios.post("http://localhost:8000/api/products/send-menu");
@@ -189,11 +188,6 @@ const sendMenuToLine = async () => {
       alert("ไม่สามารถส่งเมนูได้!");
   }
 };
-
-console.log("📌 selectedIngredients Type:", typeof selectedIngredients);
-console.log("📌 selectedIngredients Instance:", selectedIngredients instanceof Array);
-console.log("📌 selectedIngredients Before Sending:", JSON.stringify(selectedIngredients, null, 2));
-
 
 
 
@@ -266,17 +260,22 @@ console.log("📌 selectedIngredients Before Sending:", JSON.stringify(selectedI
             <div className="ingredient-selection">
             <h3>เลือกวัตถุดิบ</h3>
             <div className="ingredient-list">
-            <select
-              multiple
-              value={selectedIngredients.map(i => i.Ingredient_id)}
-              onChange={(e) => handleIngredientChange([...e.target.selectedOptions].map(option => parseInt(option.value)))}
-            >
-              {ingredients.map((ingredient) => (
-                  <option key={ingredient.Ingredient_id} value={ingredient.Ingredient_id}>
-                      {ingredient.Ingredient_name}
-                  </option>
-              ))}
-          </select>
+            <Select
+              options={ingredients.map(ingredient => ({
+                  value: ingredient.Ingredient_id,
+                  label: ingredient.Ingredient_name
+              }))}
+              isMulti
+              placeholder="เลือกวัตถุดิบ..."
+              value={ingredients.filter(ingredient =>
+                  selectedIngredients.some(sel => sel.Ingredient_id === ingredient.Ingredient_id)
+              ).map(ingredient => ({
+                  value: ingredient.Ingredient_id,
+                  label: ingredient.Ingredient_name
+              }))}
+              onChange={handleIngredientChange}
+              className="custom-dropdown"
+          />
 
             </div>
         </div>
@@ -314,17 +313,22 @@ console.log("📌 selectedIngredients Before Sending:", JSON.stringify(selectedI
             <div className="ingredient-selection">
                 <h3>เลือกวัตถุดิบ</h3>
                 <div className="ingredient-list">
-                <select
-                    multiple
-                    value={selectedIngredients.map(i => i.Ingredient_id)}
-                    onChange={(e) => handleIngredientChange([...e.target.selectedOptions].map(option => parseInt(option.value)))}
-                >
-                    {ingredients.map((ingredient) => (
-                        <option key={ingredient.Ingredient_id} value={ingredient.Ingredient_id}>
-                            {ingredient.Ingredient_name}
-                        </option>
-                    ))}
-                </select>
+                <Select
+                  options={ingredients.map(ingredient => ({
+                      value: ingredient.Ingredient_id,
+                      label: ingredient.Ingredient_name
+                  }))}
+                  isMulti
+                  placeholder="เลือกวัตถุดิบ..."
+                  value={ingredients.filter(ingredient =>
+                      selectedIngredients.some(sel => sel.Ingredient_id === ingredient.Ingredient_id)
+                  ).map(ingredient => ({
+                      value: ingredient.Ingredient_id,
+                      label: ingredient.Ingredient_name
+                  }))}
+                  onChange={handleIngredientChange}
+                  className="custom-dropdown"
+              />
 
                 </div>
             </div>

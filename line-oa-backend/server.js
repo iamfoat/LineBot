@@ -14,6 +14,7 @@ const axios = require("axios");
 const cron = require("node-cron");
 const { sendMenuToLine } = require("./controllers/ProductControllers");
 const path = require("path");
+const { deductIngredients } = require('./controllers/OrderControllers')
 
 
 app.use(express.json());
@@ -289,6 +290,10 @@ app.post('/webhook', async (req, res) => {
                     // console.log("Reply Token:", event.replyToken);
 
                     // await client.pushMessage(data.customerId, {type: "text", text: "✅ คำสั่งซื้อของคุณถูกบันทึกเรียบร้อย!",});
+            
+    
+                    await deductIngredients(data.orders);
+                    
                     pendingOrders[data.customerId] = orderId;
                     
                     
