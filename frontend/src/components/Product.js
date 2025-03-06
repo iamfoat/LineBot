@@ -129,15 +129,6 @@ const handleIngredientChange = (selectedOptions) => {
 };
 
 
-
-
-
-
-
-useEffect(() => {
-  console.log("🔥 Selected Ingredients Updated (useEffect):", JSON.stringify(selectedIngredients, null, 2));
-}, [selectedIngredients]);
-
 const handleAddProduct = () => {
   console.log("📌 selectedIngredients Type:", typeof selectedIngredients);
   console.log("📌 selectedIngredients Instance:", Array.isArray(selectedIngredients));
