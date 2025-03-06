@@ -1,0 +1,44 @@
+/* .containerIngredient {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #FAF3E0;
+    height: 100vh;
+    padding: 20px;
+}
+
+.header-container {
+    display: flex;
+    align-items: center;
+    width: 90%;
+}
+
+.back-button {
+    font-size: 24px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.ingredientitem-table {
+    width: 80%;
+    max-width: 1000px;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.ingredientitem-table th, .ingredientitem-table td {
+    border: 1px solid #D2B48C;
+    padding: 12px;
+    text-align: center;
+}
+
+.ingredientitem-table th {
+    background-color: #8B5A2B;
+    color: white;
+}
+
+.ingredientitem-table tr:nth-child(even) {
+    background-color: #F5DEB3;
+}
+
+ */

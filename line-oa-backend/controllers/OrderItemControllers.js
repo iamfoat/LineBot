@@ -1,4 +1,3 @@
-const express = require("express");
 const db = require('../db');
 require('dotenv').config();
 const axios = require("axios");
@@ -45,14 +44,54 @@ const SendNotification = async (orderId) => {
         const customerId = order[0].Customer_id; 
 
         const message = {
-            to: customerId, 
+            to: customerId,
             messages: [
                 {
-                    type: "text",
-                    text: `คำสั่งซื้อของคุณ #${orderId} กำลังถูกจัดส่งแล้ว รอรับอาหารได้เลย 🚚💨`
+                    type: "flex",
+                    altText: "เลือกวิธีการชำระเงิน",
+                    contents: {
+                        type: "bubble",
+                        body: {
+                            type: "box",
+                            layout: "vertical",
+                            contents: [
+                                { type: "text", text: "🚚 สินค้ากำลังไปส่ง!", weight: "bold", size: "xl" },
+                                { type: "text", text: "กรุณาเลือกวิธีการชำระเงิน", margin: "md" }
+                            ]
+                        },
+                        footer: {
+                            type: "box",
+                            layout: "horizontal",
+                            spacing: "sm",
+                            contents: [
+                                {
+                                    type: "button",
+                                    style: "primary",
+                                    color: "#1DB446",
+                                    action: {
+                                        type: "postback",
+                                        label: "💵 เงินสด",
+                                        data: JSON.stringify({ action: "payment", method: "cash", customerId, orderId })
+                                    }
+                                },
+                                {
+                                    type: "button",
+                                    style: "primary",
+                                    color: "#1DA1F2",
+                                    action: {
+                                        type: "postback",
+                                        label: "💳 โอนเงิน",
+                                        data: JSON.stringify({ action: "payment", method: "transfer", customerId, orderId })
+                                    }
+                                }
+                            ]
+                        }
+                    }
                 }
             ]
         };
+
+
 
         await axios.post("https://api.line.me/v2/bot/message/push", message, {
             headers: {

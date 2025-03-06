@@ -107,7 +107,7 @@ const OrderItem = () => {
             <div className="contentOrderItem">
                 <div className="order-group">
                     <h2>Order #{orderId} - Status: {orderStatus}</h2>
-                    <table>
+                    <table className="orderitem-table">
                         <thead>
                             <tr>
                                 <th>Item</th>

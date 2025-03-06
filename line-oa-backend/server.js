@@ -7,6 +7,8 @@ const db = require('./db');
 const productRoutes = require('./routes/ProductRoutes');
 const orderRoutes = require('./routes/OrderRoutes')
 const orderitemRoutes = require('./routes/OrderItemRoutes')
+const ingredientRoutes = require('./routes/IngredientRoutes')
+const ingredientItemRoutes = require('./routes/IngredientItemRoutes')
 const cors = require('cors')
 const axios = require("axios");
 const cron = require("node-cron");
@@ -21,6 +23,8 @@ app.use('/api/products', productRoutes);
 app.use("/uploads", express.static("uploads"));
 app.use('/api/orders',orderRoutes)
 app.use('/api',orderitemRoutes)
+app.use('/api',ingredientRoutes)
+app.use('/api',ingredientItemRoutes);
 
 
 const config = {
@@ -287,12 +291,51 @@ app.post('/webhook', async (req, res) => {
                     // await client.pushMessage(data.customerId, {type: "text", text: "✅ คำสั่งซื้อของคุณถูกบันทึกเรียบร้อย!",});
                     pendingOrders[data.customerId] = orderId;
                     
+                    
                 } catch (error) {
                     console.error("❌ Error saving order:", error);
                     await client.replyMessage(event.replyToken, { type: "text", text: "เกิดข้อผิดพลาด กรุณาลองใหม่" });
                 }
             } else if (data.action === "cancel") {
                 await client.replyMessage(event.replyToken, { type: "text", text: "❌ คำสั่งซื้อถูกยกเลิก" });
+            } else if (data.action === "payment") {
+                let paymentText = data.method === "cash" ? "💵 เงินสด" : "💳 โอนเงิน";
+
+                const [order] = await db.query("SELECT Total_amount FROM `Order` WHERE Order_id = ?", [data.orderId]);
+            
+                const amount = order[0].Total_amount;
+                await db.query(
+                    "INSERT INTO `Payment` (Order_id, Amount, Payment_method) VALUES (?, ?, ?) " +
+                    "ON DUPLICATE KEY UPDATE Payment_method = VALUES(Payment_method)",
+                    [data.orderId, amount, data.method]
+                );
+            
+                if (data.method === "transfer") {
+                    // 🔹 ข้อมูลบัญชีร้านค้า (แก้ไขให้ตรงกับบัญชีของคุณ)
+                    const accountDetails = `🏦 รายละเอียดบัญชีสำหรับโอนเงิน:\n\n` +
+                                           `ธนาคาร: กสิกรไทย (KBank)\n` +
+                                           `ชื่อบัญชี: ร้าน Juicy Vibes\n` +
+                                           `เลขที่บัญชี: 123-4-56789-0\n\n` +
+                                           `💰 ยอดที่ต้องชำระ: ${amount} บาท\n\n` +
+                                           `📌 กรุณาโอนเงินและส่งสลิปยืนยันการชำระเงิน`;
+            
+                    await client.replyMessage(event.replyToken, {
+                        type: "text",
+                        text: accountDetails
+                    });
+            
+                } else if (data.method === "cash" ) {
+                    await client.replyMessage(event.replyToken, {
+                        type: "text",
+                        text: `💰 ยอดที่ต้องชำระ: ${amount} บาท\n\n📌 โปรดเตรียมเงินให้พร้อม`
+                    });
+
+                } else {
+                    await client.replyMessage(event.replyToken, {
+                        type: "text",
+                        text: `✅ คุณเลือกชำระเงินด้วย: ${paymentText}`
+                    });
+                }
             }
         }
     }

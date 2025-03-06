@@ -129,7 +129,7 @@ const generateFlexMenu = (products) => {
         "type": "bubble",
         "hero": {
             "type": "image",
-            "url": `https://c048-202-44-39-239.ngrok-free.app/uploads/${product.Product_img}`,
+            "url": `https://839b-171-7-34-194.ngrok-free.app/uploads/${product.Product_img}`,
             "size": "full",
             "aspectRatio": "20:13",
             "aspectMode": "cover"
