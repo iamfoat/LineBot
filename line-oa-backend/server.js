@@ -64,7 +64,7 @@ app.post('/webhook', async (req, res) => {
 
     for (let event of events) {
         // ✅ ตรวจจับข้อความที่ลูกค้าพิมพ์เข้ามา
-        if (event.type === 'message' && event.message.type === "text") {
+        if (event.type === 'message' && event.message.type === "text" && event.message.type === "image") {
             let customerId = event.source.userId;
             let customerName = null;
             let customerText = event.message.text;
@@ -182,6 +182,7 @@ app.post('/webhook', async (req, res) => {
                     
                     await client.replyMessage(event.replyToken, confirmMessage);
 
+
                 });
 
                 
@@ -239,6 +240,27 @@ app.post('/webhook', async (req, res) => {
             }catch (error) {
                 console.error("❌ Error handling order request:", error);
             }
+            const imageId = event.message.id;
+
+            const imageUrl = `https://api-data.line.me/v2/bot/message/${imageId}/content`;
+
+                const [latestOrder] = await db.query(
+                    "SELECT Order_id FROM `Order` WHERE Customer_id = ? ORDER BY Order_id DESC LIMIT 1",
+                    [event.source.userId]
+                );
+
+                if (latestOrder.length === 0) {
+                    return client.replyMessage(event.replyToken, { type: "text", text: "⛔ ไม่พบคำสั่งซื้อของคุณ" });
+                }
+
+                const orderId = latestOrder[0].Order_id;
+
+                const resultMessage = await verifySlip(imageUrl, orderId, event.source.userId);
+                
+                await client.replyMessage(event.replyToken, {
+                    type: "text",
+                    text: resultMessage
+                });
 
         }
 
@@ -310,11 +332,11 @@ app.post('/webhook', async (req, res) => {
             
                 const amount = order[0].Total_amount;
                 await db.query(
-                    "INSERT INTO `Payment` (Order_id, Amount, Payment_method) VALUES (?, ?, ?) " +
-                    "ON DUPLICATE KEY UPDATE Payment_method = VALUES(Payment_method)",
+                    "INSERT INTO `Payment` (Order_id, Amount, Payment_method, Payment_date, status) VALUES (?, ?, ?, NOW(), 'Pending') " +
+                    "ON DUPLICATE KEY UPDATE Payment_method = VALUES(Payment_method), status = 'Pending'",
                     [data.orderId, amount, data.method]
                 );
-            
+                   
                 if (data.method === "transfer") {
                     // 🔹 ข้อมูลบัญชีร้านค้า (แก้ไขให้ตรงกับบัญชีของคุณ)
                     const accountDetails = `🏦 รายละเอียดบัญชีสำหรับโอนเงิน:\n\n` +
@@ -348,19 +370,44 @@ app.post('/webhook', async (req, res) => {
     res.sendStatus(200);
 });
 
+const SLIPOK_API_KEY = "SLIPOKMNB83WS"; 
 
-
-function handleEvent(event) {
-    console.log('Received event:', event);
-
-    if (event.type === 'message' && event.message.type === 'text') {
-        return client.replyMessage(event.replyToken, {
-            type: 'text',
-            text: `คุณพิมพ์ว่า: ${event.message.text}`,
+async function verifySlip(imageUrl, orderId, customerId) {
+    try {
+        const response = await axios.post("https://slipok.com/api/verify", {
+            api_key: SLIPOK_API_KEY,
+            image_url: imageUrl
         });
-    }
 
-    return Promise.resolve(null);
+        if (response.data.success) {
+            console.log("✅ SlipOK ตรวจสอบแล้ว:", response.data);
+
+            // 🔹 อัปเดตสถานะการชำระเงินในฐานข้อมูล
+            await db.query(
+                "UPDATE Payment SET status = 'Confirmed' WHERE Order_id = ?",
+                [orderId]
+            );
+
+            // 🔹 แจ้งลูกค้าผ่าน LINE ว่าการชำระเงินได้รับการยืนยัน
+            await client.pushMessage(customerId, {
+                type: "text",
+                text: `✅ สลิปของคุณได้รับการยืนยันเรียบร้อยแล้ว! ขอบคุณที่ใช้บริการค่ะ`
+            });
+
+            return "✅ สลิปถูกต้องและได้รับการยืนยัน";
+        } else {
+            // 🔹 แจ้งลูกค้าหากสลิปไม่ผ่านการตรวจสอบ
+            await client.pushMessage(customerId, {
+                type: "text",
+                text: `❌ สลิปของคุณไม่ผ่านการตรวจสอบ กรุณาตรวจสอบใหม่`
+            });
+
+            return "❌ สลิปไม่ถูกต้อง กรุณาตรวจสอบใหม่";
+        }
+    } catch (error) {
+        console.error("❌ Error verifying slip:", error);
+        return "❌ มีข้อผิดพลาดในการตรวจสอบสลิป กรุณาลองใหม่ภายหลัง";
+    }
 }
 
 
