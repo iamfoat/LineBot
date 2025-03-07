@@ -223,7 +223,7 @@ const sendMenuToLine = async () => {
             onTouchStart={() => setHoveredProduct(index)} // เมื่อแตะที่สินค้า
             >
 
-              <img src={`https://1ab7-171-7-34-194.ngrok-free.app/uploads/${product.Product_img}`} alt={product.Product_name} />
+              <img src={`https://ad04-171-7-34-194.ngrok-free.app/uploads/${product.Product_img}`} alt={product.Product_name} />
               <p>{product.Product_name}</p>
               <p>{product.Price} บาท</p>
               <p>{product.Description}</p>

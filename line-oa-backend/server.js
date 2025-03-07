@@ -15,6 +15,10 @@ const cron = require("node-cron");
 const { sendMenuToLine } = require("./controllers/ProductControllers");
 const path = require("path");
 const { deductIngredients } = require('./controllers/OrderControllers')
+const FormData = require("form-data");
+const fs = require("fs");
+
+
 
 
 app.use(express.json());
@@ -64,7 +68,7 @@ app.post('/webhook', async (req, res) => {
 
     for (let event of events) {
         // ✅ ตรวจจับข้อความที่ลูกค้าพิมพ์เข้ามา
-        if (event.type === 'message' && event.message.type === "text" && event.message.type === "image") {
+        if (event.type === 'message' && event.message.type === "text" ) {
             let customerId = event.source.userId;
             let customerName = null;
             let customerText = event.message.text;
@@ -231,7 +235,6 @@ app.post('/webhook', async (req, res) => {
                         text: `📦 ที่อยู่ของคุณถูกอัปเดตเรียบร้อย!\nร้านค้ากำลังทำรายการสั่งซื้อ\nหากต้องการแก้ไขที่อยู่ พิมพ์ "แก้ไข"`,
                     });
                 
-                    // ✅ ล้างค่าหน่วยความจำ
                     delete pendingOrders[customerId];
                 }
                 
@@ -240,9 +243,16 @@ app.post('/webhook', async (req, res) => {
             }catch (error) {
                 console.error("❌ Error handling order request:", error);
             }
+
+            } else if (event.type === 'message' && event.message.type === "image") {
             const imageId = event.message.id;
 
-            const imageUrl = `https://api-data.line.me/v2/bot/message/${imageId}/content`;
+            // console.log("🖼️ Image ID ที่ส่งไปโหลด:", imageId);
+            if (!imageId) {
+                console.error("❌ Image ID เป็นค่าว่าง! ตรวจสอบการดึงค่าจาก LINE API");
+                return;
+            }
+
 
                 const [latestOrder] = await db.query(
                     "SELECT Order_id FROM `Order` WHERE Customer_id = ? ORDER BY Order_id DESC LIMIT 1",
@@ -255,13 +265,12 @@ app.post('/webhook', async (req, res) => {
 
                 const orderId = latestOrder[0].Order_id;
 
-                const resultMessage = await verifySlip(imageUrl, orderId, event.source.userId);
+                const resultMessage = await verifySlip(imageId, orderId, event.source.userId);
                 
                 await client.replyMessage(event.replyToken, {
                     type: "text",
                     text: resultMessage
                 });
-
         }
 
         else if (event.type === "postback") {
@@ -276,13 +285,12 @@ app.post('/webhook', async (req, res) => {
             if (data.action === "confirm") {
                 try {
                     
-                    // ✅ บันทึกคำสั่งซื้อหลังจากยืนยัน
                     
                     const [orderResult] = await db.query(
                         "INSERT INTO `Order` (Customer_id, Total_amount, Customer_Address, Status) VALUES (?, ?, ?, 'Preparing')",
                         [data.customerId, data.totalAmount, "ที่อยู่ลูกค้า (อัปเดตทีหลัง)"]
                     );
-                    const orderId = orderResult.insertId; // ได้ค่า Order_id ที่สร้างใหม่
+                    const orderId = orderResult.insertId;
                     console.log(`✅ Order ID ที่สร้าง: ${orderId}`);
 
                     for (let order of data.orders) {
@@ -338,7 +346,6 @@ app.post('/webhook', async (req, res) => {
                 );
                    
                 if (data.method === "transfer") {
-                    // 🔹 ข้อมูลบัญชีร้านค้า (แก้ไขให้ตรงกับบัญชีของคุณ)
                     const accountDetails = `🏦 รายละเอียดบัญชีสำหรับโอนเงิน:\n\n` +
                                            `ธนาคาร: กสิกรไทย (KBank)\n` +
                                            `ชื่อบัญชี: ร้าน Juicy Vibes\n` +
@@ -370,46 +377,80 @@ app.post('/webhook', async (req, res) => {
     res.sendStatus(200);
 });
 
-const SLIPOK_API_KEY = "SLIPOKMNB83WS"; 
 
-async function verifySlip(imageUrl, orderId, customerId) {
+const downloadImage = async (imageId) => {
+    const url = `https://api-data.line.me/v2/bot/message/${imageId}/content`;
+    const headers = { Authorization: `Bearer ${config.channelAccessToken}` };
+
     try {
-        const response = await axios.post("https://slipok.com/api/verify", {
-            api_key: SLIPOK_API_KEY,
-            image_url: imageUrl
-        });
+        console.log("📥 Downloading image from:", url);
+        // console.log("📥 Sending request with headers:", headers);
+        const response = await axios.get(url, { headers, responseType: "arraybuffer" });
+        
+
+        const tmpDir = path.join(__dirname, "tmp");
+        if (!fs.existsSync(tmpDir)) {
+            fs.mkdirSync(tmpDir, { recursive: true });
+        }
+
+        const imagePath = path.join(tmpDir, `slip-${imageId}.jpg`);
+        fs.writeFileSync(imagePath, response.data);  
+
+        return imagePath;
+    } catch (error) {
+        console.error("❌ Error downloading image:", error.response ? error.response.data.toString() : error.message);
+        return null;
+    }
+};
+
+
+// ฟังก์ชันตรวจสอบสลิป
+const verifySlip = async (imageId, orderId, customerId) => {
+    try {
+        const imagePath = await downloadImage(imageId);
+        if (!imagePath) {
+            return "❌ ไม่สามารถดาวน์โหลดรูปภาพได้ กรุณาส่งใหม่";
+        }
+
+        const FormData = require("form-data");
+        const formData = new FormData();
+        formData.append("files", fs.createReadStream(imagePath));
+        formData.append("log", "true");
+
+        const SLIPOK_BRANCH_ID = "40471";
+        const SLIPOK_API_KEY = "SLIPOKMNB83WS";
+
+        const response = await axios.post(
+            `https://api.slipok.com/api/line/apikey/${SLIPOK_BRANCH_ID}`,
+            formData,
+            {
+                headers: {
+                    "x-authorization": SLIPOK_API_KEY,
+                    ...formData.getHeaders()  
+                }
+            }
+        );
+
+        //ลบไฟล์หลังส่งเสร็จ
+        fs.unlinkSync(imagePath);
+
+        console.log("✅ SlipOK Response:", response.data);
 
         if (response.data.success) {
-            console.log("✅ SlipOK ตรวจสอบแล้ว:", response.data);
-
-            // 🔹 อัปเดตสถานะการชำระเงินในฐานข้อมูล
             await db.query(
                 "UPDATE Payment SET status = 'Confirmed' WHERE Order_id = ?",
                 [orderId]
             );
 
-            // 🔹 แจ้งลูกค้าผ่าน LINE ว่าการชำระเงินได้รับการยืนยัน
-            await client.pushMessage(customerId, {
-                type: "text",
-                text: `✅ สลิปของคุณได้รับการยืนยันเรียบร้อยแล้ว! ขอบคุณที่ใช้บริการค่ะ`
-            });
-
             return "✅ สลิปถูกต้องและได้รับการยืนยัน";
         } else {
-            // 🔹 แจ้งลูกค้าหากสลิปไม่ผ่านการตรวจสอบ
-            await client.pushMessage(customerId, {
-                type: "text",
-                text: `❌ สลิปของคุณไม่ผ่านการตรวจสอบ กรุณาตรวจสอบใหม่`
-            });
-
-            return "❌ สลิปไม่ถูกต้อง กรุณาตรวจสอบใหม่";
+            return "❌ สลิปไม่ถูกต้อง กรุณาส่งใหม่";
         }
     } catch (error) {
-        console.error("❌ Error verifying slip:", error);
-        return "❌ มีข้อผิดพลาดในการตรวจสอบสลิป กรุณาลองใหม่ภายหลัง";
+        console.error("❌ Error verifying slip:", error.response ? error.response.data : error.message);
+        return `❌ มีข้อผิดพลาดในการตรวจสอบสลิป`;
     }
-}
-
+};
 
 (async () => {
     try {
