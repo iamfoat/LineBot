@@ -1,155 +1,180 @@
 import React, { useState, useEffect } from "react";
-import axios from 'axios';
+import axios from "axios";
 import "../css/OrderItem.css";
 import { FaCheck, FaArrowLeft } from "react-icons/fa";
 import { useParams, useNavigate } from "react-router-dom";
 
 const OrderItem = () => {
-    const { orderId } = useParams(); //ดึงค่า orderId จาก url
-    console.log("🔄 useParams() received orderId:", orderId);
-    const navigate = useNavigate();
-    const [orderDetails, setOrderDetails] = useState([]);
-    const [checkedItems, setCheckedItems] = useState({});
-    const [orderStatus, setOrderStatus] = useState("Preparing");
+  const { orderId } = useParams(); //ดึงค่า orderId จาก url
+  console.log("🔄 useParams() received orderId:", orderId);
+  const navigate = useNavigate();
+  const [orderDetails, setOrderDetails] = useState([]);
+  const [checkedItems, setCheckedItems] = useState({});
+  const [orderStatus, setOrderStatus] = useState("Preparing");
 
-    useEffect(() => {
-        console.log("🔄 Order ID from URL:", orderId);
-        LoadData();
-    }, [orderId]); //เรียก LoadData ทุกครั้งที่ orderId เปลี่ยนแปลง
-    
+  useEffect(() => {
+    console.log("🔄 Order ID from URL:", orderId);
+    LoadData();
+  }, [orderId]); //เรียก LoadData ทุกครั้งที่ orderId เปลี่ยนแปลง
 
-    const LoadData = async () => {
-        if (!orderId) {
-            console.error("Order ID is undefined!");
-            return;
+  const LoadData = async () => {
+    if (!orderId) {
+      console.error("Order ID is undefined!");
+      return;
+    }
+
+    try {
+      console.log(`Fetching order items for Order ID: ${orderId}`);
+      const res = await axios.get(
+        `http://localhost:8000/api/orderitems/${orderId}`
+      );
+      console.log("API Response:", res.data);
+      setOrderDetails(res.data);
+
+      //โหลดค่าที่ติ๊กไว้จากdb
+      const initialCheckedState = {};
+      res.data.forEach((item) => {
+        console.log(
+          `Item ${item.Order_item_id} status from DB: ${item.status}`
+        );
+        initialCheckedState[item.Order_item_id] = item.status === "Done";
+      });
+      setCheckedItems(initialCheckedState);
+
+      //ตรวจสอบสถานะออเดอร์จาก API
+      if (res.data.length > 0) {
+        setOrderStatus(res.data[0].Order_status);
+      }
+    } catch (err) {
+      console.error("Error fetching order details:", err);
+    }
+  };
+
+  //อัปเดตสถานะ Checkbox และบันทึกลงฐานข้อมูล
+  const toggleCheck = async (orderItemId) => {
+    const newCheckedState = !checkedItems[orderItemId];
+
+    //อัปเดตสถานะใน state
+    setCheckedItems((prev) => ({
+      ...prev,
+      [orderItemId]: newCheckedState,
+    }));
+
+    try {
+      //อัปเดตสถานะของรายการสินค้าในฐานข้อมูล
+      await axios.put(
+        `http://localhost:8000/api/orderitems/${Number(orderItemId)}/status`,
+        {
+          status: newCheckedState ? "Preparing" : "Done",
         }
+      );
+      // console.log(`✅ Order item ${orderItemId} updated to ${newCheckedState ? "Done" : "Preparing"}`);
+    } catch (err) {
+      console.error("Error updating item status:", err);
+    }
 
-        try {
-            console.log(`Fetching order items for Order ID: ${orderId}`);
-            const res = await axios.get(`http://localhost:8000/api/orderitems/${orderId}`);
-            console.log("API Response:", res.data);
-            setOrderDetails(res.data);
+    //ตรวจสอบว่าทุกช่องถูกติ๊ก
+    const allChecked = Object.values({
+      ...checkedItems,
+      [orderItemId]: newCheckedState,
+    }).every((value) => value === true);
+    if (allChecked) {
+      updateOrderStatus("Out for Delivery");
+    } else {
+      updateOrderStatus("Preparing");
+    }
+  };
 
-            //โหลดค่าที่ติ๊กไว้จากdb
-            const initialCheckedState = {};
-            res.data.forEach((item) => {
-                console.log(`Item ${item.Order_item_id} status from DB: ${item.status}`); 
-                initialCheckedState[item.Order_item_id] = item.status === "Done";
-            });
-            setCheckedItems(initialCheckedState);
+  //อัปเดตสถานะ Order ไปที่ Backend
+  const updateOrderStatus = async (newStatus) => {
+    if (!orderId) {
+      console.error("Order ID is undefined!");
+      return;
+    }
 
-            //ตรวจสอบสถานะออเดอร์จาก API
-            if (res.data.length > 0) {
-                setOrderStatus(res.data[0].Order_status);
-            }
+    try {
+      // console.log(`Updating order status for Order ID: ${orderId} to ${newStatus}`);
 
-        } catch (err) {
-            console.error("Error fetching order details:", err);
-        }
-    };
+      await axios.put(`http://localhost:8000/api/orders/${orderId}/status`, {
+        status: newStatus,
+      });
 
-    //อัปเดตสถานะ Checkbox และบันทึกลงฐานข้อมูล
-    const toggleCheck = async (orderItemId) => {
-        const newCheckedState = !checkedItems[orderItemId];
+      setOrderStatus(newStatus);
+      console.log(`Order status updated to ${newStatus}`);
+    } catch (err) {
+      console.error("Error updating order status:", err);
+    }
+  };
 
-        //อัปเดตสถานะใน state
-        setCheckedItems((prev) => ({
-            ...prev,
-            [orderItemId]: newCheckedState,
-        }));
+  return (
+    <div className="containerorder">
+      <div className="header-container">
+        <FaArrowLeft className="back-button" onClick={() => navigate(-1)} />
+        <h1 className="header">Order item</h1>
+      </div>
 
-        try {
-            //อัปเดตสถานะของรายการสินค้าในฐานข้อมูล
-            await axios.put(`http://localhost:8000/api/orderitems/${Number(orderItemId)}/status`, {
-                status: newCheckedState ? "Preparing" : "Done",
-            });
-            // console.log(`✅ Order item ${orderItemId} updated to ${newCheckedState ? "Done" : "Preparing"}`);
-        } catch (err) {
-            console.error("Error updating item status:", err);
-        }
+      <div className="contentOrderItem">
+        <div className="order-group">
+          <h2>
+            Order #{orderId} - Status: {orderStatus}
+          </h2>
+          <table className="orderitem-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Price</th>
+                <th>Qty</th>
+                <th>Total</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orderDetails.length > 0 ? (
+                orderDetails.map((item) => (
+                  <tr key={item.Order_item_id}>
+                    <td>{item.Product_name}</td>
+                    <td>{item.Price}</td>
+                    <td>{item.Quantity}</td>
+                    <td>{item.Subtotal}</td>
+                    <td className="checkbox-container">
+                      <div
+                        className={`checkbox ${
+                          checkedItems[item.Order_item_id] ? "checked" : ""
+                        }`}
+                        onClick={() => toggleCheck(item.Order_item_id)}
+                      >
+                        {checkedItems[item.Order_item_id] && (
+                          <FaCheck color="white" />
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" style={{ textAlign: "center" }}>
+                    No items found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
 
-        //ตรวจสอบว่าทุกช่องถูกติ๊ก
-        const allChecked = Object.values({ ...checkedItems, [orderItemId]: newCheckedState }).every(value => value === true);
-        if (allChecked) {
-            updateOrderStatus("Out for Delivery");
-        } else {
-            updateOrderStatus("Preparing");
-        }
-    };
-
-    //อัปเดตสถานะ Order ไปที่ Backend
-    const updateOrderStatus = async (newStatus) => {
-        if (!orderId) {
-            console.error("Order ID is undefined!");
-            return;
-        }
-    
-        try {
-            // console.log(`Updating order status for Order ID: ${orderId} to ${newStatus}`);
-    
-            await axios.put(`http://localhost:8000/api/orders/${orderId}/status`, { status: newStatus });
-    
-            setOrderStatus(newStatus);
-            console.log(`Order status updated to ${newStatus}`);
-        } catch (err) {
-            console.error("Error updating order status:", err);
-        }
-    };
-    
-
-    return (
-        <div className="containerorder">
-            <div className="header-container">
-                <FaArrowLeft className="back-button" onClick={() => navigate(-1)} />
-                <h1 className="header">Order item</h1>
-            </div>
-
-            <div className="contentOrderItem">
-                <div className="order-group">
-                    <h2>Order #{orderId} - Status: {orderStatus}</h2>
-                    <table className="orderitem-table">
-                        <thead>
-                            <tr>
-                                <th>Item</th>
-                                <th>Price</th>
-                                <th>Qty</th>
-                                <th>Total</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {orderDetails.length > 0 ? (
-                                orderDetails.map((item) => (
-                                    <tr key={item.Order_item_id}>
-                                        <td>{item.Product_name}</td>
-                                        <td>{item.Price}</td>
-                                        <td>{item.Quantity}</td>
-                                        <td>{item.Subtotal}</td>
-                                        <td className="checkbox-container">
-                                            <div
-                                                className={`checkbox ${checkedItems[item.Order_item_id] ? "checked" : ""}`}
-                                                onClick={() => toggleCheck(item.Order_item_id)}
-                                            >
-                                                {checkedItems[item.Order_item_id] && <FaCheck color="white" />}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="5" style={{ textAlign: "center" }}>No items found</td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-
-                    <div style={{ textAlign: "right", marginTop: "10px", fontSize: "18px", fontWeight: "bold" }}>
-                        Order Total: {orderDetails.reduce((sum, item) => sum + item.Subtotal, 0)} บาท
-                    </div>
-                </div>
-            </div>
+          <div
+            style={{
+              textAlign: "right",
+              marginTop: "10px",
+              fontSize: "18px",
+              fontWeight: "bold",
+            }}
+          >
+            Order Total:{" "}
+            {orderDetails.reduce((sum, item) => sum + item.Subtotal, 0)} บาท
+          </div>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 export default OrderItem;

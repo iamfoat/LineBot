@@ -1,44 +1,18 @@
-/* .containerIngredient {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: #FAF3E0;
-    height: 100vh;
-    padding: 20px;
-}
-
 .header-container {
-    display: flex;
-    align-items: center;
-    width: 90%;
-}
-
-.back-button {
+    text-align: center;
+    background: #4E342E; /* สีน้ำตาลเข้ม */
+    color: white;
+    padding: 15px;
     font-size: 24px;
-    cursor: pointer;
-    margin-right: 10px;
+    font-weight: bold;
 }
 
 .ingredientitem-table {
-    width: 80%;
-    max-width: 1000px;
+    width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
+    margin-top: 10px;
 }
 
-.ingredientitem-table th, .ingredientitem-table td {
-    border: 1px solid #D2B48C;
-    padding: 12px;
-    text-align: center;
+.ingredient-group {
+    padding: 15px;
 }
-
-.ingredientitem-table th {
-    background-color: #8B5A2B;
-    color: white;
-}
-
-.ingredientitem-table tr:nth-child(even) {
-    background-color: #F5DEB3;
-}
-
- */

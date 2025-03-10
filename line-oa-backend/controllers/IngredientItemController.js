@@ -8,7 +8,7 @@ const GetIngredientItems = async (req, res) => {
             FROM Ingredient_item ii
             JOIN Ingredient i ON ii.Ingredient_id = i.Ingredient_id
             WHERE i.Ingredient_name = ?
-            ORDER BY ii.Create_at DESC
+            ORDER BY ii.Create_at ASC
         `, [ingredientName]);
 
         res.status(200).json(items);
@@ -74,24 +74,47 @@ const AddStockWithBatch = async (req, res) => {
     }
 };
 
+const GetStockAvailable = async (req, res) => {
+    try {
+        const { ingredientName } = req.params;
+        const [items] = await db.query(`
+            SELECT ii.Batch_code, ii.Quantity, ii.Expiry_date, ii.Create_at
+            FROM Ingredient_item ii
+            JOIN Ingredient i ON ii.Ingredient_id = i.Ingredient_id
+            WHERE i.Ingredient_name = ? AND ii.Quantity > 0  -- ✅ ดึงเฉพาะที่ Stock ยังเหลือ
+            ORDER BY ii.Create_at ASC
+        `, [ingredientName]);
+
+        res.status(200).json(items);
+    } catch (error) {
+        console.error("❌ Error fetching available stock:", error);
+        res.status(500).json({ error: "เกิดข้อผิดพลาด ไม่สามารถโหลดข้อมูลได้" });
+    }
+};
+
+
 const GetStockHistory = async (req, res) => {
     try {
+        const { ingredientName } = req.params;
         const [history] = await db.query(`
-            SELECT ii.*, i.Ingredient_name 
-            FROM Ingredient_item ii 
+            SELECT ii.Batch_code, ii.Quantity, ii.Expiry_date, ii.Create_at
+            FROM Ingredient_item ii
             JOIN Ingredient i ON ii.Ingredient_id = i.Ingredient_id
+            WHERE i.Ingredient_name = ? AND ii.Quantity = 0  -- ✅ ดึงเฉพาะ Stock ที่หมดแล้ว
             ORDER BY ii.Create_at DESC
-        `);
+        `, [ingredientName]);
 
         res.status(200).json(history);
     } catch (error) {
         console.error("❌ Error fetching stock history:", error);
-        res.status(500).json({ error: "เกิดข้อผิดพลาด ไม่สามารถโหลดประวัติการเพิ่มสต็อกได้" });
+        res.status(500).json({ error: "เกิดข้อผิดพลาด ไม่สามารถโหลดประวัติสต็อกได้" });
     }
 };
 
+
 module.exports = { 
      AddStockWithBatch,
+     GetStockAvailable,
      GetStockHistory,
      GetIngredientItems 
     };

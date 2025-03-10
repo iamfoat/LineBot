@@ -156,10 +156,35 @@ const deductIngredients = async (orders) => {
     }
 };
 
+const getCompletedOrders = async (req, res) => {
+    try {
+        const [completedOrders] = await db.query(`
+            SELECT 
+                o.Order_id, 
+                COALESCE(c.Customer_name, 'ไม่พบชื่อ') AS Customer_name, 
+                o.Total_amount, 
+                o.Customer_Address, 
+                o.created_at, 
+                o.Status
+            FROM \`Order\` o
+            LEFT JOIN \`Customer\` c ON o.Customer_id = c.Customer_id
+            WHERE o.Status = 'Completed'  -- ✅ ดึงเฉพาะ Order ที่เสร็จสมบูรณ์
+            ORDER BY o.created_at DESC
+        `);
+        
+        res.status(200).json(completedOrders);
+    } catch (err) {
+        console.error('Error fetching completed orders:', err);
+        res.status(500).json({ error: 'Failed to fetch completed orders' });
+    }
+};
+
+
 
 module.exports = {
     getOrder,
     createOrder,
-    deductIngredients
+    deductIngredients,
+    getCompletedOrders
     
 };
