@@ -22,7 +22,8 @@ const CreateIngredient = async (req, res) => {
         if (existingIngredient.length > 0) {
             // ✅ ถ้ามีวัตถุดิบอยู่แล้ว ให้อัปเดต `Quantity`
             Ingredient_id = existingIngredient[0].Ingredient_id;
-            newQuantity = existingIngredient[0].Quantity + Quantity;
+            newQuantity = parseInt(existingIngredient[0].Quantity, 10) + parseInt(Quantity, 10);
+
 
             await db.query(
                 "UPDATE `Ingredient` SET Quantity = ?, Updated_at = NOW() WHERE Ingredient_id = ?",
@@ -71,7 +72,9 @@ const CreateIngredient = async (req, res) => {
 const getIngredient = async (req, res) => {
     try {
         const [ingredients] = await db.query(`
-            SELECT MIN(Ingredient_id) AS Ingredient_id, Ingredient_name, SUM(Quantity) AS Quantity, MAX(Updated_at) AS Updated_at 
+            SELECT MIN(Ingredient_id) AS Ingredient_id, Ingredient_name, 
+                   SUM(Quantity) AS Quantity, MAX(Updated_at) AS Updated_at, 
+                   MAX(Low_stock_threshold) AS Low_stock_threshold
             FROM Ingredient 
             GROUP BY Ingredient_name
         `);
@@ -81,6 +84,7 @@ const getIngredient = async (req, res) => {
         res.status(500).json({ error: "เกิดข้อผิดพลาด ไม่สามารถโหลดวัตถุดิบได้" });
     }
 };
+
 
 
 

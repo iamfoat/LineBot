@@ -7,7 +7,7 @@ const ManageOrder = () => {
   const [data, setData] = useState([]);
   const navigate = useNavigate();
   const [completedOrders, setCompletedOrders] = useState([]);
-  const [showHistory, setShowHistory] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
 
   useEffect(() => {
     LoadData();
@@ -16,7 +16,7 @@ const ManageOrder = () => {
   const LoadData = async () => {
     try {
       const res = await axios.get("http://localhost:8000/api/orders");
-      setData(res.data); //update state
+      setData(res.data.filter(order => order.Status !== "Completed")); //update state
 
       const completedRes = await axios.get(
         "http://localhost:8000/api/orders/completed"
@@ -56,6 +56,12 @@ const ManageOrder = () => {
           {showHistory ? "📋 ดู Order ปัจจุบัน" : "📜 ดูประวัติ Order"}
         </button> */}
         <h1 className="header">Order</h1>
+        <button 
+  className="order-toggle-button" 
+  onClick={() => setShowCompleted(!showCompleted)}
+>
+  {showCompleted ? "📋 ดู Order ปัจจุบัน" : "📜 ดูประวัติ Order"}
+</button>
       </div>
 
       <div className="sidebar">
@@ -92,15 +98,13 @@ const ManageOrder = () => {
         </ul>
 
         <div className="contentOrder">
+          
           <div className="order-grid">
-            {data.map((order) => (
+          {(showCompleted ? completedOrders : data).map((order) => (
               <div
                 key={order.Order_id}
                 className="order-card"
                 onClick={() => handleOrderClick(order.Order_id)}
-                // onMouseEnter={() => setHoveredProduct(index)} // เมื่อเมาส์เลื่อนเข้า
-                // onMouseLeave={() => setHoveredProduct(null)} // เมื่อเมาส์ออก
-                // onTouchStart={() => setHoveredProduct(index)} // เมื่อแตะที่สินค้า
               >
                 {/* <img src={`https://a2ca-171-6-142-15.ngrok-free.app/uploads/${product.Product_img}`} alt={product.Product_name} /> */}
                 <div className="order-left">

@@ -94,6 +94,31 @@
     margin-top: 5px;
 }
 
+.order-toggle-button {
+    background: linear-gradient(to right, #8B5E3B, #D2B48C);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 25px; /* ทำให้ปุ่มมน */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    outline: none;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* เพิ่มเงา */
+  }
+  
+  .order-toggle-button:hover {
+    background: linear-gradient(to right, #ff6a4d, #fd9e62);
+    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.3); /* เพิ่มเงาเมื่อ hover */
+    transform: translateY(-2px);
+  }
+  
+  .order-toggle-button:active {
+    transform: scale(0.95); /* กดแล้วหดลง */
+  }
+  
+
 @media (max-width: 768px) {
     .order-card {
         flex-direction: column; /* ✅ เรียงแนวตั้ง */
