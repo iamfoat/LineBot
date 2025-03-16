@@ -12,11 +12,15 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
+import { useNavigate } from "react-router-dom";
+import { FaArrowLeft } from "react-icons/fa";
+
 
 const Dashboard = () => {
   const [data, setData] = useState(null);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadDashboardData();
@@ -47,10 +51,11 @@ const Dashboard = () => {
   return (
     <div className="dashboard">
       <div className="header-container ">
+        <FaArrowLeft className="back-button" onClick={() => navigate(-1)} />
         <h1 className="header">Dashboard</h1>
       </div>
       <div className="date-filters">
-        <label>📅 เลือกช่วงวันที่: </label>
+        <label>เลือกช่วงวันที่: </label>
         <DatePicker
           selected={startDate}
           onChange={setStartDate}
@@ -63,7 +68,7 @@ const Dashboard = () => {
           dateFormat="yyyy-MM-dd"
           placeholderText="End Date"
         />
-        <button onClick={loadDashboardData}>🔍 ค้นหา</button>
+        <button onClick={loadDashboardData}>ค้นหา</button>
       </div>
       <div className="stats">
         <div className="card">
@@ -84,7 +89,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <h3>📈 กราฟรายรับ & รายจ่าย</h3>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart
           data={[
