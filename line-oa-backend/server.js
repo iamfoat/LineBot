@@ -17,6 +17,7 @@ const path = require("path");
 const { deductIngredients } = require("./controllers/OrderControllers");
 const FormData = require("form-data");
 const fs = require("fs");
+const Dashboard = require("./routes/DashboardRoutes")
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -27,6 +28,9 @@ app.use("/api/orders", orderRoutes);
 app.use("/api", orderitemRoutes);
 app.use("/api", ingredientRoutes);
 app.use("/api", ingredientItemRoutes);
+app.use("/api", Dashboard);
+
+
 
 const config = {
   channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,

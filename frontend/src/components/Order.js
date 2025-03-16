@@ -91,7 +91,7 @@ const ManageOrder = () => {
                 <a href="/Ingredients">Ingredient</a>
               </li>
               <li>
-                <a href="#">Dashboard</a>
+                <a href="/dashboard">Dashboard</a>
               </li>
             </ul>
           </li>

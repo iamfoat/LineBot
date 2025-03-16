@@ -208,7 +208,7 @@ const sendMenuToLine = async () => {
               <li><a href="/orders">Order</a></li>
               <li><a href="/products">Product</a></li>
               <li><a href="/Ingredients">Ingredient</a></li>
-              <li><a href="#">Dashboard</a></li>
+              <li><a href="/dashboard">Dashboard</a></li>
             </ul>
             </li>
           </ul>

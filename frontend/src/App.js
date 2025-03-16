@@ -5,6 +5,7 @@ import Ingredient from './components/Ingredient';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import OrderItem from './components/OrderItem';
 import IngredientItem from './components/IngredientItem';
+import Dashboard from './components/Dashboard';
 
 
 
@@ -30,6 +31,7 @@ function App() {
           <Route path="/orderitems/:orderId" element={<OrderItem />} />
           <Route path='/Ingredients' element={<Ingredient />} />
           <Route path='/ingredientitems/:ingredientName' element={<IngredientItem />} />
+          <Route path="/dashboard" element={<Dashboard />} />
         </Routes>
 
         {/* <nav> 

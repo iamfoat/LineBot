@@ -2,21 +2,29 @@ const db = require("../db");
 
 const GetIngredientItems = async (req, res) => {
     try {
-        const { ingredientName } = req.params;
-        const [items] = await db.query(`
-            SELECT ii.Batch_code, ii.Quantity, ii.Expiry_date
-            FROM Ingredient_item ii
-            JOIN Ingredient i ON ii.Ingredient_id = i.Ingredient_id
-            WHERE i.Ingredient_name = ?
-            ORDER BY ii.Create_at ASC
-        `, [ingredientName]);
+        const [ingredients] = await db.query(`
+            SELECT 
+                i.Ingredient_id, 
+                i.Ingredient_name, 
+                i.Low_stock_threshold, 
+                i.Updated_at,
+                SUM(b.Quantity) AS Quantity, 
+                MAX(b.Create_at) AS Last_Purchase_Date,
+                MAX(b.Expiry_date) AS Expiry_date,
+                SUM(b.Purchase_Price) AS Purchase_Price,
+                SUM(b.Quantity) AS Purchase_Quantity
+            FROM Ingredient i
+            LEFT JOIN Ingredient_Batch b ON i.Ingredient_id = b.Ingredient_id
+            GROUP BY i.Ingredient_id
+        `);
 
-        res.status(200).json(items);
+        res.status(200).json(ingredients);
     } catch (error) {
-        console.error("❌ Error fetching ingredient items:", error);
-        res.status(500).json({ error: "เกิดข้อผิดพลาด ไม่สามารถโหลดข้อมูลได้" });
+        console.error("❌ Error fetching ingredients:", error);
+        res.status(500).json({ error: "เกิดข้อผิดพลาด ไม่สามารถโหลดวัตถุดิบได้" });
     }
 };
+
 
 const AddStockWithBatch = async (req, res) => {
     try {

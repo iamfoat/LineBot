@@ -6,5 +6,6 @@ router.post("/ingredients",ingredientControllers.CreateIngredient);
 router.get("/ingredients",ingredientControllers.getIngredient);
 router.post("/add-stock", ingredientControllers.AddStock);
 router.delete("/:Ingredient_id", ingredientControllers.DeleteIngredient);
+router.post("/ingredients/bulk", ingredientControllers.AddMultipleIngredients);
 
 module.exports = router;
