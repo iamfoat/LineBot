@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "../css/Dashboard.css";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import {
   BarChart,
   Bar,
@@ -13,6 +15,8 @@ import {
 
 const Dashboard = () => {
   const [data, setData] = useState(null);
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -20,7 +24,18 @@ const Dashboard = () => {
 
   const loadDashboardData = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/dashboard");
+      // ✅ ตรวจสอบค่า `startDate` และ `endDate`
+      console.log("🟢 ก่อนส่ง API:", startDate, endDate);
+
+      const params = {};
+      if (startDate) params.startDate = startDate.toISOString().split("T")[0];
+      if (endDate) params.endDate = endDate.toISOString().split("T")[0];
+
+      console.log("📡 ส่ง API Params:", params);
+
+      const res = await axios.get("http://localhost:8000/api/dashboard", {
+        params,
+      });
       setData(res.data);
     } catch (error) {
       console.error("❌ Error loading dashboard data:", error);
@@ -32,9 +47,24 @@ const Dashboard = () => {
   return (
     <div className="dashboard">
       <div className="header-container ">
-        <h1 className="header">Ingredient</h1>
+        <h1 className="header">Dashboard</h1>
       </div>
-
+      <div className="date-filters">
+        <label>📅 เลือกช่วงวันที่: </label>
+        <DatePicker
+          selected={startDate}
+          onChange={setStartDate}
+          dateFormat="yyyy-MM-dd"
+          placeholderText="Start Date"
+        />
+        <DatePicker
+          selected={endDate}
+          onChange={setEndDate}
+          dateFormat="yyyy-MM-dd"
+          placeholderText="End Date"
+        />
+        <button onClick={loadDashboardData}>🔍 ค้นหา</button>
+      </div>
       <div className="stats">
         <div className="card">
           <h3>📦 ยอดขาย</h3>

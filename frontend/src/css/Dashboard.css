@@ -6,14 +6,75 @@
 .stats {
     display: flex;
     justify-content: space-around;
+    flex-wrap: wrap;
     margin-bottom: 20px;
 }
 
 .card {
-    background: #f8f8f8;
+    background: #fff;
     padding: 20px;
     border-radius: 10px;
     box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
     text-align: center;
-    width: 200px;
+    width: 220px;
+    transition: transform 0.3s ease-in-out;
+}
+
+.card:hover {
+    transform: scale(1.05);
+}
+
+.card h3 {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.card p {
+    font-size: 22px;
+    font-weight: bold;
+    color: #4CAF50;
+}
+
+/* 📈 ปรับแต่งกราฟ */
+.recharts-wrapper {
+    margin-top: 20px;
+}
+
+.date-filters {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.date-filters label {
+    font-size: 16px;
+    font-weight: bold;
+    color: #444;
+}
+
+.date-filters input {
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* 🔍 ปุ่มค้นหา */
+.date-filters button {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.date-filters button:hover {
+    background: #45a049;
 }
