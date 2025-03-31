@@ -119,6 +119,10 @@ const ManageOrder = () => {
                     <strong>Amount:</strong> {order.Total_amount} บาท
                   </p>
                   <p>
+                    <strong>Address:</strong>{" "}
+                    {order.Customer_Address}
+                  </p>
+                  <p>
                     <strong>Create at:</strong> {formatDate(order.created_at)}
                   </p>
                 </div>

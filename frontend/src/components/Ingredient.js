@@ -10,6 +10,9 @@ const Ingredient = () => {
     { name: "", quantity: "", price: "", threshold: "" },
   ]);
   const navigate = useNavigate();
+  const [imageFile, setImageFile] = useState(null);
+  const [ocrItems, setOcrItems] = useState([]);
+  const [receiptImage, setReceiptImage] = useState("");
 
   useEffect(() => {
     LoadData();
@@ -17,17 +20,13 @@ const Ingredient = () => {
 
   const LoadData = async () => {
     try {
-        const res = await axios.get("http://localhost:8000/api/ingredients");
-        console.log("📦 Data from API:", res.data); // ✅ Debugging
-        setData(res.data); // ✅ อัปเดต state
+      const res = await axios.get("http://localhost:8000/api/ingredients");
+      console.log("📦 Data from API:", res.data); // ✅ Debugging
+      setData(res.data); // ✅ อัปเดต state
     } catch (err) {
-        console.error("❌ Error fetching ingredients:", err);
+      console.error("❌ Error fetching ingredients:", err);
     }
-};
-
-
-
-
+  };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -63,28 +62,74 @@ const Ingredient = () => {
     const defaultExpiryDate = today.toISOString().split("T")[0]; // แปลงเป็น YYYY-MM-DD
 
     // ✅ ตั้งค่า Expiry_date อัตโนมัติถ้าไม่ได้กรอก
-    const updatedIngredients = ingredients.map(ing => ({
-        ...ing,
-        expiry_date: ing.expiry_date || defaultExpiryDate
+    const updatedIngredients = ingredients.map((ing) => ({
+      ...ing,
+      expiry_date: ing.expiry_date || defaultExpiryDate,
     }));
 
     console.log("📦 Sending Ingredients Data:", updatedIngredients);
 
     try {
-        const response = await axios.post(
-            "http://localhost:8000/api/ingredients/bulk",
-            { ingredients: updatedIngredients },
-            { headers: { "Content-Type": "application/json" } }
-        );
-        console.log("✅ Added Ingredients:", response.data);
-        setShowForm(false);
-        setIngredients([{ name: "", quantity: "", price: "", threshold: "", expiry_date: "" }]);
-        LoadData();
+      const response = await axios.post(
+        "http://localhost:8000/api/ingredients/bulk",
+        { ingredients: updatedIngredients },
+        { headers: { "Content-Type": "application/json" } }
+      );
+      console.log("✅ Added Ingredients:", response.data);
+      setShowForm(false);
+      setIngredients([
+        { name: "", quantity: "", price: "", threshold: "", expiry_date: "" },
+      ]);
+      LoadData();
     } catch (error) {
-        console.error("❌ Error adding ingredients:", error.response ? error.response.data : error);
+      console.error(
+        "❌ Error adding ingredients:",
+        error.response ? error.response.data : error
+      );
     }
-};
+  };
 
+  const handleAnalyzeOCR = async () => {
+    if (!imageFile) return alert("กรุณาเลือกรูปใบเสร็จ");
+
+    const formData = new FormData();
+    formData.append("image", imageFile);
+
+    try {
+      const res = await axios.post(
+        "http://localhost:8000/api/upload-ocr",
+        formData
+      );
+      if (res.data.items && res.data.items.length > 0) {
+        setOcrItems(res.data.items);
+        setReceiptImage(res.data.receipt_img); // แสดงรูปได้ถ้าต้องการ
+      } else {
+        alert("📭 ไม่พบรายการในภาพใบเสร็จ");
+      }
+      // 🔥 ทดลองใช้ regex / split text → สร้าง ingredients อัตโนมัติ
+      // หรือให้ user copy paste เอง
+    } catch (err) {
+      console.error("❌ OCR error:", err);
+      alert("❌ วิเคราะห์สลิปไม่สำเร็จ");
+    }
+  };
+
+  const handleConfirmOCR = async () => {
+    try {
+      await axios.post("http://localhost:8000/api/confirm-ocr", {
+        items: ocrItems,
+        receipt_img: receiptImage,
+      });
+      alert("✅ เพิ่มรายการเรียบร้อยแล้ว");
+      setOcrItems([]);
+      setReceiptImage("");
+      setShowForm(false);
+      LoadData();
+    } catch (err) {
+      console.error("❌ Error confirming OCR:", err);
+      alert("❌ ไม่สามารถบันทึกรายการได้");
+    }
+  };
 
   return (
     <div className="containerIngredient">
@@ -145,21 +190,23 @@ const Ingredient = () => {
                   <td>{item.Ingredient_name}</td>
                   <td
                     className={
-                      item.Quantity <= item.Low_stock_threshold
+                      item.Total_Quantity <= item.Low_stock_threshold
                         ? "low-stock"
                         : ""
                     }
                   ></td>
+
                   <td>{item.Total_Quantity}</td>
 
                   <td>{formatDate(item.Updated_at)}</td>
                   <td>
-                    {item.Quantity <= item.Low_stock_threshold ? (
+                    {item.Total_Quantity <= item.Low_stock_threshold ? (
                       <span className="warning-text">⚠️ Low Stock</span>
                     ) : (
                       "✔️ OK"
                     )}
                   </td>
+
                   <td>
                     <button
                       className="view-btn"
@@ -215,17 +262,59 @@ const Ingredient = () => {
                   value={ingredient.threshold}
                   onChange={(e) => handleInputChange(index, e)}
                 />
-                
-                <button
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setImageFile(e.target.files[0])}
+                />
+                <button onClick={handleAnalyzeOCR}>Upload</button>
+
+                {ocrItems.length > 0 && (
+                  <div
+                    className="ocr-preview"
+                    style={{
+                      maxHeight: "300px", // หรือ 50vh
+                      overflowY: "auto",
+                      marginTop: "1rem",
+                      border: "1px solid #ccc",
+                      padding: "0.5rem",
+                      borderRadius: "8px",
+                      background: "#fff",
+                    }}
+                  >
+                    <h3>📋 รายการที่พบจากใบเสร็จ:</h3>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>ชื่อวัตถุดิบ</th>
+                          <th>จำนวน</th>
+                          <th>ราคา</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ocrItems.map((item, index) => (
+                          <tr key={index}>
+                            <td>{item.name}</td>
+                            <td>{item.quantity}</td>
+                            <td>{item.price}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <button onClick={handleConfirmOCR}>✅</button>
+                  </div>
+                )}
+
+                {/* <button
                   className="remove-btn"
                   onClick={() => handleRemoveRow(index)}
                 >
                   ❌
-                </button>
+                </button> */}
               </div>
             ))}
 
-            <button className="add-row-btn" onClick={handleAddRow}>
+            {/* <button className="add-row-btn" onClick={handleAddRow}>
               More
             </button>
             <button className="submit-btn" onClick={handleAddIngredients}>
@@ -233,7 +322,7 @@ const Ingredient = () => {
             </button>
             <button className="cancel-btn" onClick={() => setShowForm(false)}>
               Cancel
-            </button>
+            </button> */}
           </div>
         </div>
       )}

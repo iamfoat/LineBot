@@ -9,16 +9,16 @@ os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 # In[6]:
 
 
-from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
+from transformers import AutoTokenizer, pipeline
 from fuzzywuzzy import process
 import pandas as pd
 
 # โหลด tokenizer และโมเดล WangchanBERTa ที่ปรับใช้กับภาษาไทย
 tokenizer = AutoTokenizer.from_pretrained("airesearch/wangchanberta-base-att-spm-uncased", use_fast=False)
-model = AutoModelForTokenClassification.from_pretrained("airesearch/wangchanberta-base-att-spm-uncased")
+# model = AutoModelForTokenClassification.from_pretrained("airesearch/wangchanberta-base-att-spm-uncased")
 
-# สร้าง NER pipeline
-ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, aggregation_strategy="simple")
+# # สร้าง NER pipeline
+# ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, aggregation_strategy="simple")
 
 
 # In[25]:

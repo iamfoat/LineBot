@@ -15,9 +15,12 @@ const cron = require("node-cron");
 const { sendMenuToLine } = require("./controllers/ProductControllers");
 const path = require("path");
 const { deductIngredients } = require("./controllers/OrderControllers");
-const FormData = require("form-data");
 const fs = require("fs");
-const Dashboard = require("./routes/DashboardRoutes")
+const Dashboard = require("./routes/DashboardRoutes");
+const ingredient2 = require("./routes/IngredientRoutes2");
+const cloudinary = require("cloudinary").v2;
+const paymentroutes = require("./routes/PaymentRoutes");
+const { verifySlip } = require("./controllers/PaymentControllers");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -29,13 +32,19 @@ app.use("/api", orderitemRoutes);
 app.use("/api", ingredientRoutes);
 app.use("/api", ingredientItemRoutes);
 app.use("/api", Dashboard);
-
-
+app.use("/api", ingredient2);
+app.use("/api",paymentroutes);
 
 const config = {
   channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
   channelSecret: process.env.CHANNEL_SECRET,
 };
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 if (!config.channelAccessToken || !config.channelSecret) {
   throw new Error(
@@ -104,7 +113,7 @@ app.post("/webhook", async (req, res) => {
         console.log(customerText);
 
         // ✅ 2. เรียก Model วิเคราะห์คำสั่งซื้อ
-        const modelPath = path.join(__dirname, "..", "Model", "NLP.py");
+        const modelPath = path.join(__dirname, ".", "Model", "NLP.py");
         exec(
           `python "${modelPath}" "${customerText}"`,
           async (error, stdout) => {
@@ -283,12 +292,9 @@ app.post("/webhook", async (req, res) => {
       }
 
       const orderId = latestOrder[0].Order_id;
+      const userId = event.source.userId;
 
-      const resultMessage = await verifySlip(
-        imageId,
-        orderId,
-        event.source.userId
-      );
+      const resultMessage = await verifySlip(imageId, orderId, userId);
 
       await client.replyMessage(event.replyToken, {
         type: "text",
@@ -402,91 +408,124 @@ app.post("/webhook", async (req, res) => {
   res.sendStatus(200);
 });
 
-const downloadImage = async (imageId) => {
-  const url = `https://api-data.line.me/v2/bot/message/${imageId}/content`;
-  const headers = { Authorization: `Bearer ${config.channelAccessToken}` };
+// const downloadImage = async (imageId) => {
+//   const url = `https://api-data.line.me/v2/bot/message/${imageId}/content`;
+//   const headers = { Authorization: `Bearer ${config.channelAccessToken}` };
 
-  try {
-    console.log("📥 Downloading image from:", url);
-    // console.log("📥 Sending request with headers:", headers);
-    const response = await axios.get(url, {
-      headers,
-      responseType: "arraybuffer",
-    });
+//   try {
+//     console.log("📥 Downloading image from:", url);
+//     // console.log("📥 Sending request with headers:", headers);
+//     const response = await axios.get(url, {
+//       headers,
+//       responseType: "arraybuffer",
+//     });
 
-    const tmpDir = path.join(__dirname, "tmp");
-    if (!fs.existsSync(tmpDir)) {
-      fs.mkdirSync(tmpDir, { recursive: true });
-    }
+//     const tmpDir = path.join(__dirname, "tmp");
+//     if (!fs.existsSync(tmpDir)) {
+//       fs.mkdirSync(tmpDir, { recursive: true });
+//     }
 
-    const imagePath = path.join(tmpDir, `slip-${imageId}.jpg`);
-    fs.writeFileSync(imagePath, response.data);
+//     const imagePath = path.join(tmpDir, `slip-${imageId}.jpg`);
+//     fs.writeFileSync(imagePath, response.data);
 
-    return imagePath;
-  } catch (error) {
-    console.error(
-      "❌ Error downloading image:",
-      error.response ? error.response.data.toString() : error.message
-    );
-    return null;
-  }
-};
+//     return imagePath;
+//   } catch (error) {
+//     console.error(
+//       "❌ Error downloading image:",
+//       error.response ? error.response.data.toString() : error.message
+//     );
+//     return null;
+//   }
+// };
 
 // ฟังก์ชันตรวจสอบสลิป
-const verifySlip = async (imageId, orderId, customerId) => {
-  try {
-    const imagePath = await downloadImage(imageId);
-    if (!imagePath) {
-      return "❌ ไม่สามารถดาวน์โหลดรูปภาพได้ กรุณาส่งใหม่";
-    }
+// const verifySlip = async (imageId, orderId, customerId) => {
+//   try {
+//     const imagePath = await downloadImage(imageId);
+//     if (!imagePath) {
+//       return "❌ ไม่สามารถดาวน์โหลดรูปภาพได้ กรุณาส่งใหม่";
+//     }
 
-    const FormData = require("form-data");
-    const formData = new FormData();
-    formData.append("files", fs.createReadStream(imagePath));
-    formData.append("log", "true");
+//     const result = await cloudinary.uploader.upload(imagePath, {
+//       folder: "slips",
+//     });
+//     const imageUrl = result.secure_url;
+//     console.log("✅ URL ที่ได้จาก Cloudinary:", imageUrl);
 
-    const SLIPOK_BRANCH_ID = "40471";
-    const SLIPOK_API_KEY = "SLIPOKMNB83WS";
+//     // ✅ 1. ดึงยอดที่ต้องจ่ายจาก DB
+//     const [orderRows] = await db.query(
+//       "SELECT Total_amount FROM `Order` WHERE Order_id = ?",
+//       [orderId]
+//     );
+//     const amount = orderRows.length ? orderRows[0].Total_amount : 0;
 
-    const response = await axios.post(
-      `https://api.slipok.com/api/line/apikey/${SLIPOK_BRANCH_ID}`,
-      formData,
-      {
-        headers: {
-          "x-authorization": SLIPOK_API_KEY,
-          ...formData.getHeaders(),
-        },
-      }
-    );
+//     const FormData = require("form-data");
+//     const formData = new FormData();
+//     formData.append("files", fs.createReadStream(imagePath));
+//     formData.append("log", "true");
+//     formData.append("amount", amount);
 
-    //ลบไฟล์หลังส่งเสร็จ
-    fs.unlinkSync(imagePath);
+//     const SLIPOK_BRANCH_ID = "40471";
+//     const SLIPOK_API_KEY = "SLIPOKMNB83WS";
 
-    console.log("✅ SlipOK Response:", response.data);
+//     const response = await axios.post(
+//       `https://api.slipok.com/api/line/apikey/${SLIPOK_BRANCH_ID}`,
+//       formData,
+//       {
+//         headers: {
+//           "x-authorization": SLIPOK_API_KEY,
+//           ...formData.getHeaders(),
+//         },
+//       }
+//     );
 
-    if (response.data.success) {
-      await db.query(
-        "UPDATE Payment SET status = 'Confirmed' WHERE Order_id = ?",
-        [orderId]
-      );
+//     const { data } = response.data;
 
-      await db.query(
-        "UPDATE `Order` SET status = 'completed' WHERE Order_id = ?",
-        [orderId]
-      );
+//     fs.unlinkSync(imagePath);
+//     console.log("✅ SlipOK Response:", response.data);
 
-      return "✅ สลิปถูกต้องและได้รับการยืนยัน";
-    } else {
-      return "❌ สลิปไม่ถูกต้อง กรุณาส่งใหม่";
-    }
-  } catch (error) {
-    console.error(
-      "❌ Error verifying slip:",
-      error.response ? error.response.data : error.message
-    );
-    return `❌ มีข้อผิดพลาดในการตรวจสอบสลิป`;
-  }
-};
+//     if (data?.success) {
+//       await db.query(
+//         "UPDATE Payment SET status = 'Confirmed' WHERE Order_id = ?",
+//         [orderId]
+//       );
+
+//       // ✅ อัปเดตสถานะออเดอร์เป็น Completed
+//       await db.query(
+//         "UPDATE `Order` SET status = 'Completed' WHERE Order_id = ?",
+//         [orderId]
+//       );
+
+//       return "✅ สลิปถูกต้องและได้รับการยืนยัน";
+//     } else {
+//       return "❌ สลิปไม่ถูกต้อง กรุณาส่งใหม่";
+//     }
+//   } catch (error) {
+//     const errData = error?.response?.data;
+//     console.error("raw error object:", error);
+//     console.error("error.response:", error.response);
+//     console.error("error.response.data:", errData);
+
+//     if (errData?.code) {
+//       switch (errData.code) {
+//         case 1010:
+//           return "⚠️ กรุณารอสักครู่ สลิปจากธนาคารต้องรอประมาณ 5 นาที";
+//         case 1012:
+//           // ✅ ตรงนี้! ดึง timestamp จาก message
+//           const timestamp = errData.message?.split("เมื่อ")[1]?.trim();
+//           return `❗ สลิปซ้ำ: เคยส่งเมื่อ ${timestamp || "ก่อนหน้านี้"}`;
+//         case 1013:
+//           return "❌ ยอดเงินไม่ตรงกับสลิป กรุณาตรวจสอบอีกครั้ง";
+//         case 1014:
+//           return "❌ บัญชีผู้รับไม่ตรงกับร้านค้า";
+//         default:
+//           return `❌ ตรวจสอบไม่ผ่าน (code: ${errData.code})`;
+//       }
+//     }
+  
+//     return "❌ มีข้อผิดพลาดในการตรวจสอบสลิป";
+//   }
+// };
 
 (async () => {
   try {
@@ -497,21 +536,21 @@ const verifySlip = async (imageId, orderId, customerId) => {
   }
 })();
 
-cron.schedule(
-  "0 */8 * * *",
-  async () => {
-    console.log("กำลังส่งเมนูสินค้าไปยังลูกค้า...");
-    try {
-      await sendMenuToLine(); // เรียกใช้ฟังก์ชันส่งเมนู
-    } catch (error) {
-      console.error("Error sending menu:", error);
-    }
-  },
-  {
-    scheduled: true,
-    timezone: "Asia/Bangkok", // ตั้งค่าเป็นเวลาประเทศไทย
-  }
-);
+// cron.schedule(
+//   "0 */8 * * *",
+//   async () => {
+//     console.log("กำลังส่งเมนูสินค้าไปยังลูกค้า...");
+//     try {
+//       await sendMenuToLine(); // เรียกใช้ฟังก์ชันส่งเมนู
+//     } catch (error) {
+//       console.error("Error sending menu:", error);
+//     }
+//   },
+//   {
+//     scheduled: true,
+//     timezone: "Asia/Bangkok", // ตั้งค่าเป็นเวลาประเทศไทย
+//   }
+// );
 
 const PORT = 8000;
 app.listen(PORT, "0.0.0.0", () => {

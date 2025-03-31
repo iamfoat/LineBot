@@ -1,0 +1,11 @@
+transformers
+fuzzywuzzy
+pandas
+pymysql
+pythainlp
+scikit-learn
+tokenizer
+protobuf
+tiktoken
+python-Levenshtein
+sentencepiece

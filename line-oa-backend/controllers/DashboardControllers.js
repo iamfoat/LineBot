@@ -24,7 +24,8 @@ const getDashboardData = async (req, res) => {
             SELECT COALESCE(SUM(oi.Subtotal), 0) AS totalRevenue 
             FROM Order_item oi
             JOIN \`Order\` o ON oi.Order_id = o.Order_id
-            WHERE o.created_at BETWEEN ? AND ?;
+            WHERE o.created_at BETWEEN ? AND ?
+            AND o.status = 'Completed';
         `, [start, end]);
 
         // ✅ ดึงรายจ่าย (Total Expenses) → ใช้ `Create_at` จาก `Ingredient_item`

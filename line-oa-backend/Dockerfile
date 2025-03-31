@@ -1,5 +1,5 @@
 # ใช้ Node.js image สำหรับการ build
-FROM node:14
+FROM node:lts
 
 # สร้าง directory ภายใน container
 WORKDIR /app
@@ -12,6 +12,12 @@ RUN npm install
 
 # คัดลอกไฟล์ทั้งหมดใน project เข้าไปใน container
 COPY . .
+
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip && \
+    ln -s /usr/bin/python3 /usr/bin/python
+
+RUN pip install --break-system-packages -r ./Model/requirement.txt
 
 # เปิด port 8000
 EXPOSE 8000
