@@ -6,7 +6,6 @@ const path = require("path");
 require("dotenv").config();
 const cloudinary = require("cloudinary").v2;
 
-
 const config = {
   channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
   SLIPOK_BRANCH_ID: process.env.SLIPOK_BRANCH_ID,
@@ -143,7 +142,7 @@ const CashPayment = async (orderId, customerId) => {
   try {
     // ✅ ตรวจสอบว่ามี Payment สำหรับ Order นี้หรือยัง
     const [existingPayment] = await db.query(
-      "SELECT * FROM Payment WHERE Order_id = ?",
+      "SELECT * FROM Payment WHERE Order_id = ? AND status = 'Confirmed'",
       [orderId]
     );
 
@@ -151,10 +150,23 @@ const CashPayment = async (orderId, customerId) => {
       return "⛔ คำสั่งซื้อมีการชำระเงินอยู่แล้ว";
     }
 
+    const [orderRow] = await db.query(
+        "SELECT Total_amount FROM `Order` WHERE Order_id = ?",
+        [orderId]
+      );
+      
+      const amount = orderRow.length > 0 ? orderRow[0].Total_amount : 0;
+      
+
     // ✅ บันทึกข้อมูลการชำระเงินสด
     await db.query(
-      "INSERT INTO Payment (Order_id, Amount, Payment_method, Payment_date, status) VALUES (?, ?, ?, NOW(), 'Pending')",
-      [orderId, 0, "Cash"] // 💵 เงินสด ไม่มีจำนวนเงินในระบบ
+      "INSERT INTO Payment (Order_id, Amount, Payment_method, Payment_date, status) VALUES (?, ?, ?, NOW(), 'Confirmed')",
+      [orderId, amount, "Cash"] // 💵 เงินสด ไม่มีจำนวนเงินในระบบ
+    );
+
+    await db.query(
+      "UPDATE `Order` SET status = 'Completed' WHERE Order_id = ?",
+      [orderId]
     );
 
     return "✅ ระบบบันทึกการชำระเงินสด กรุณาให้พนักงานตรวจสอบ";
