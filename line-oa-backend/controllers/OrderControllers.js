@@ -149,7 +149,7 @@ const deductIngredients = async (productId, quantityOrdered) => {
             "UPDATE Ingredient_item SET Quantity = Quantity - ? WHERE Batch_code = ?",
             [deductQty, batch.Batch_code]
           );
-          
+           
   
           qtyToDeduct -= deductQty;
           console.log(`🔹 หักวัตถุดิบ: Ingredient ID ${ingredientID}, ใช้ล็อต ${batch.Batch_code}, หัก ${deductQty}`);

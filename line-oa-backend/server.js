@@ -550,21 +550,21 @@ app.post("/webhook", async (req, res) => {
   }
 })();
 
-// cron.schedule(
-//   "0 */8 * * *",
-//   async () => {
-//     console.log("กำลังส่งเมนูสินค้าไปยังลูกค้า...");
-//     try {
-//       await sendMenuToLine(); // เรียกใช้ฟังก์ชันส่งเมนู
-//     } catch (error) {
-//       console.error("Error sending menu:", error);
-//     }
-//   },
-//   {
-//     scheduled: true,
-//     timezone: "Asia/Bangkok", // ตั้งค่าเป็นเวลาประเทศไทย
-//   }
-// );
+cron.schedule(
+  "0 */8 * * *",
+  async () => {
+    console.log("กำลังส่งเมนูสินค้าไปยังลูกค้า...");
+    try {
+      await sendMenuToLine(); // เรียกใช้ฟังก์ชันส่งเมนู
+    } catch (error) {
+      console.error("Error sending menu:", error);
+    }
+  },
+  {
+    scheduled: true,
+    timezone: "Asia/Bangkok", // ตั้งค่าเป็นเวลาประเทศไทย
+  }
+);
 
 const PORT = 8000;
 app.listen(PORT, "0.0.0.0", () => {
