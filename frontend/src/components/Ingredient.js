@@ -200,12 +200,12 @@ const Ingredient = () => {
 
                   <td>{formatDate(item.Updated_at)}</td>
                   <td>
-                    {item.Total_Quantity <= item.Low_stock_threshold ? (
-                      <span className="warning-text">⚠️ Low Stock</span>
-                    ) : (
-                      "✔️ OK"
-                    )}
-                  </td>
+  {item.Total_Quantity <= item.Low_stock_threshold ? (
+    <span className="warning-text">⚠️ Low Stock</span>
+  ) : (
+    "✔️ OK"
+  )}
+</td>
 
                   <td>
                     <button
@@ -314,7 +314,7 @@ const Ingredient = () => {
               </div>
             ))}
 
-            {/* <button className="add-row-btn" onClick={handleAddRow}>
+            <button className="add-row-btn" onClick={handleAddRow}>
               More
             </button>
             <button className="submit-btn" onClick={handleAddIngredients}>
@@ -322,7 +322,7 @@ const Ingredient = () => {
             </button>
             <button className="cancel-btn" onClick={() => setShowForm(false)}>
               Cancel
-            </button> */}
+            </button>
           </div>
         </div>
       )}

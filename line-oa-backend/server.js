@@ -14,13 +14,17 @@ const axios = require("axios");
 const cron = require("node-cron");
 const { sendMenuToLine } = require("./controllers/ProductControllers");
 const path = require("path");
-const { deductIngredients } = require("./controllers/OrderControllers");
+const {
+  deductIngredients,
+  checkStockBeforeDeduct,
+  deductIngredientsBulk,
+} = require("./controllers/OrderControllers");
 const fs = require("fs");
 const Dashboard = require("./routes/DashboardRoutes");
 const ingredient2 = require("./routes/IngredientRoutes2");
 const cloudinary = require("cloudinary").v2;
 const paymentroutes = require("./routes/PaymentRoutes");
-const { verifySlip } = require("./controllers/PaymentControllers");
+const { verifySlip, CashPayment } = require("./controllers/PaymentControllers");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -33,7 +37,7 @@ app.use("/api", ingredientRoutes);
 app.use("/api", ingredientItemRoutes);
 app.use("/api", Dashboard);
 app.use("/api", ingredient2);
-app.use("/api",paymentroutes);
+app.use("/api", paymentroutes);
 
 const config = {
   channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
@@ -311,6 +315,15 @@ app.post("/webhook", async (req, res) => {
 
       if (data.action === "confirm") {
         try {
+          const stockCheckMsg = await checkStockBeforeDeduct(data.orders);
+          if (stockCheckMsg) {
+            await client.replyMessage(event.replyToken, {
+              type: "text",
+              text: stockCheckMsg,
+            });
+            return; // ❌ ถ้าสต็อกไม่พอ หยุดเลย ไม่สร้าง Order
+          }
+
           const [orderResult] = await db.query(
             "INSERT INTO `Order` (Customer_id, Total_amount, Customer_Address, Status) VALUES (?, ?, ?, 'Preparing')",
             [data.customerId, data.totalAmount, "ที่อยู่ลูกค้า (อัปเดตทีหลัง)"]
@@ -336,6 +349,8 @@ app.post("/webhook", async (req, res) => {
               "INSERT INTO Order_item (Order_id, Product_id, Quantity, Subtotal, Status) VALUES (?, ?, ?, ?, 'Preparing')",
               [orderId, order.product_id, order.quantity, subtotal]
             );
+            // await deductIngredientsBulk(data.orders);
+            await deductIngredients(order.product_id, order.quantity);
           }
 
           await client.replyMessage(event.replyToken, {
@@ -346,8 +361,6 @@ app.post("/webhook", async (req, res) => {
           // console.log("Reply Token:", event.replyToken);
 
           // await client.pushMessage(data.customerId, {type: "text", text: "✅ คำสั่งซื้อของคุณถูกบันทึกเรียบร้อย!",});
-
-          await deductIngredients(data.orders);
 
           pendingOrders[data.customerId] = orderId;
         } catch (error) {
@@ -391,9 +404,10 @@ app.post("/webhook", async (req, res) => {
             text: accountDetails,
           });
         } else if (data.method === "cash") {
+          const cashResult = await CashPayment(data.orderId, data.customerId);
           await client.replyMessage(event.replyToken, {
             type: "text",
-            text: `💰 ยอดที่ต้องชำระ: ${amount} บาท\n\n📌 โปรดเตรียมเงินให้พร้อม`,
+            text: cashResult,
           });
         } else {
           await client.replyMessage(event.replyToken, {
@@ -522,7 +536,7 @@ app.post("/webhook", async (req, res) => {
 //           return `❌ ตรวจสอบไม่ผ่าน (code: ${errData.code})`;
 //       }
 //     }
-  
+
 //     return "❌ มีข้อผิดพลาดในการตรวจสอบสลิป";
 //   }
 // };

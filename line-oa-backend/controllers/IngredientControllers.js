@@ -119,7 +119,7 @@ const analyzeIngredientSlip = async (req, res) => {
     const receiptImg = uploadResult.secure_url;
 
     // 2️⃣ Analyze with Gemini
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // ✅ เร็ว + ฟรีบางส่วน
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); 
     const result = await model.generateContent([
       {
         text: `คุณคือระบบ OCR สำหรับใบเสร็จ Makro
@@ -247,7 +247,7 @@ const confirmOcrInsertToDB = async (req, res) => {
       const expiryDate =
         item.expiry_date || moment().add(5, "days").format("YYYY-MM-DD");
 
-      const batchCode = `BATCH-${Date.now()}`;
+      const batchCode = `Lot-${Date.now()}`;
 
       await db.query(
         `INSERT INTO Ingredient_item 
