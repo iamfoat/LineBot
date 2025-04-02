@@ -116,6 +116,15 @@ app.post("/webhook", async (req, res) => {
         console.log(`✅ บันทึก ${customerId} ลงฐานข้อมูลเรียบร้อย`);
         console.log(customerText);
 
+        // if (
+        //   customerText.includes("สวัสดี") ||
+        //   customerText.includes("เมนู") ||
+        //   customerText.includes("สั่งซื้อ")
+        // ) {
+        //   // ส่งเมนูกลับไป
+        //   await sendMenuToLine(customerId); // เรียกฟังก์ชันเพื่อส่งเมนู
+        // }
+
         // ✅ 2. เรียก Model วิเคราะห์คำสั่งซื้อ
         const modelPath = path.join(__dirname, ".", "Model", "NLP.py");
         exec(
@@ -305,6 +314,7 @@ app.post("/webhook", async (req, res) => {
         text: resultMessage,
       });
     } else if (event.type === "postback") {
+
       let data;
       try {
         data = JSON.parse(event.postback.data);
@@ -550,21 +560,21 @@ app.post("/webhook", async (req, res) => {
   }
 })();
 
-cron.schedule(
-  "0 */8 * * *",
-  async () => {
-    console.log("กำลังส่งเมนูสินค้าไปยังลูกค้า...");
-    try {
-      await sendMenuToLine(); // เรียกใช้ฟังก์ชันส่งเมนู
-    } catch (error) {
-      console.error("Error sending menu:", error);
-    }
-  },
-  {
-    scheduled: true,
-    timezone: "Asia/Bangkok", // ตั้งค่าเป็นเวลาประเทศไทย
-  }
-);
+// cron.schedule(
+//   "0 */8 * * *",
+//   async () => {
+//     console.log("กำลังส่งเมนูสินค้าไปยังลูกค้า...");
+//     try {
+//       await sendMenuToLine(); // เรียกใช้ฟังก์ชันส่งเมนู
+//     } catch (error) {
+//       console.error("Error sending menu:", error);
+//     }
+//   },
+//   {
+//     scheduled: true,
+//     timezone: "Asia/Bangkok", // ตั้งค่าเป็นเวลาประเทศไทย
+//   }
+// );
 
 const PORT = 8000;
 app.listen(PORT, "0.0.0.0", () => {

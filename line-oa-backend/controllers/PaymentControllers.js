@@ -70,6 +70,11 @@ const verifySlip = async (imageId, orderId, customerId) => {
     );
     const amount = orderRows.length ? orderRows[0].Total_amount : 0;
 
+    await db.query(
+      "UPDATE `Payment` SET Slip_img = ? WHERE Order_id = ?",
+      [imageUrl, orderId]
+    );
+
     const FormData = require("form-data");
     const formData = new FormData();
     formData.append("files", fs.createReadStream(imagePath));
@@ -90,9 +95,11 @@ const verifySlip = async (imageId, orderId, customerId) => {
       }
     );
 
+    fs.unlinkSync(imagePath);
+
+
     const { data } = response.data;
 
-    fs.unlinkSync(imagePath);
     console.log("✅ SlipOK Response:", response.data);
 
     if (data?.success) {

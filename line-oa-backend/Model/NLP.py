@@ -69,9 +69,11 @@ def extract_orders(text):
     text = normalize(text.strip())
     text = re.sub(r'\s+', ' ', text)
 
-    matches = re.findall(r'(\D+)\s*(\d+)', text)  
+    matches = re.findall(r'(\D+)\s*(\d*)', text)  # ปรับ regex ให้อ่านค่าจำนวนที่อาจไม่มี
     for menu_name, qty in matches:
         menu_name = normalize(menu_name.strip())
+        
+        # ถ้า qty เป็นค่าว่าง (ไม่มีการระบุจำนวน) ให้ตั้งค่าเป็น 1
         quantity = int(qty) if qty.isdigit() else 1
 
         best_match, product_id = find_best_match(menu_name, menu_db)

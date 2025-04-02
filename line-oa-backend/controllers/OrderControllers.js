@@ -133,7 +133,7 @@ const deductIngredients = async (productId, quantityOrdered) => {
   
       for (const ingredient of ingredientList) {
         const ingredientID = ingredient.Ingredient_id;
-        let qtyToDeduct = ingredient.Quantity_used * quantityOrdered;
+        let qtyToDeduct = ingredient.Quantity_used * quantityOrdered * 200;
   
         // ✅ ดึงลำดับล็อตเรียงตามวันหมดอายุ (FIFO)
         const [batches] = await db.query(

@@ -38,6 +38,13 @@ const CreateIngredient = async (req, res) => {
     let Ingredient_id;
     let newQuantity = parseInt(Quantity, 10);
 
+    if (isNaN(newQuantity)) {
+      return res.status(400).json({ error: "Quantity ต้องเป็นตัวเลข" });
+    }
+    newQuantity = newQuantity * 1000;
+
+    console.log(newQuantity);
+
     // ✅ ค้นหา Ingredient_id
     const [existingIngredient] = await db.query(
       "SELECT Ingredient_id FROM Ingredient WHERE Ingredient_name = ?",
@@ -50,7 +57,7 @@ const CreateIngredient = async (req, res) => {
       // ✅ เพิ่มวัตถุดิบลง `Ingredient_item`
       await db.query(
         "INSERT INTO Ingredient_item (Ingredient_id, Batch_code, Quantity, Purchase_Price, Expiry_date, Create_at) VALUES (?, ?, ?, ?, ?, NOW())",
-        [Ingredient_id, Date.now(), Quantity, Purchase_Price, Expiry_date]
+        [Ingredient_id, Date.now(), newQuantity, Purchase_Price, Expiry_date]
       );
 
       // ✅ อัปเดต `Quantity` ใน Ingredient
@@ -58,18 +65,19 @@ const CreateIngredient = async (req, res) => {
         "UPDATE Ingredient SET Quantity = (SELECT COALESCE(SUM(Quantity), 0) FROM Ingredient_item WHERE Ingredient_id = ?), Updated_at = NOW() WHERE Ingredient_id = ?",
         [Ingredient_id, Ingredient_id]
       );
+      
     } else {
       // ✅ เพิ่ม `Ingredient` ใหม่
       const [result] = await db.query(
         "INSERT INTO Ingredient (Ingredient_name, Quantity, Low_stock_threshold, Updated_at) VALUES (?, ?, ?, NOW())",
-        [Ingredient_name, Quantity, Low_stock_threshold]
+        [Ingredient_name, newQuantity, Low_stock_threshold]
       );
       Ingredient_id = result.insertId;
 
       // ✅ เพิ่ม `Ingredient_item`
       await db.query(
         "INSERT INTO Ingredient_item (Ingredient_id, Batch_code, Quantity, Purchase_Price, Expiry_date, Create_at) VALUES (?, ?, ?, ?, ?, NOW())",
-        [Ingredient_id, Date.now(), Quantity, Purchase_Price, Expiry_date]
+        [Ingredient_id, Date.now(), newQuantity, Purchase_Price, Expiry_date]
       );
     }
 
@@ -249,13 +257,15 @@ const confirmOcrInsertToDB = async (req, res) => {
 
       const batchCode = `Lot-${Date.now()}`;
 
+      const quantityGrams = item.quantity * 1000;
+
       await db.query(
         `INSERT INTO Ingredient_item 
             (Ingredient_id, quantity, purchase_price, expiry_date, receipt_img, Batch_code)
             VALUES (?, ?, ?, ?, ?, ?)`,
         [
           ingredientId,
-          item.quantity,
+          quantityGrams,  
           item.price,
           expiryDate,
           receipt_img,
@@ -266,7 +276,7 @@ const confirmOcrInsertToDB = async (req, res) => {
       // 🔄 4. อัปเดต stock
       await db.query(
         "UPDATE Ingredient SET Quantity = Quantity + ?, Updated_at = NOW() WHERE Ingredient_id = ?",
-        [item.quantity, ingredientId]
+        [quantityGrams, ingredientId] 
       );
     }
 
@@ -310,10 +320,11 @@ const AddStock = async (req, res) => {
         .json({ error: "กรุณาระบุ Ingredient_id และ quantity" });
     }
 
+    const quantityGrams = quantity * 1000;
     // ✅ อัปเดตสต็อกและเวลาล่าสุด
     const [result] = await db.query(
       "UPDATE `Ingredient` SET Quantity = Quantity + ?, Updated_at = NOW() WHERE Ingredient_id = ?",
-      [quantity, Ingredient_id]
+      [quantityGrams, Ingredient_id]
     );
 
     res
@@ -365,6 +376,7 @@ const AddMultipleIngredients = async (req, res) => {
       quantity = parseInt(quantity, 10);
       price = parseFloat(price);
       threshold = parseInt(threshold, 10) || 0;
+      const quantityGrams = quantity * 1000;
 
       expiry_date =
         expiry_date ||
@@ -387,7 +399,7 @@ const AddMultipleIngredients = async (req, res) => {
       } else {
         const [result] = await db.query(
           "INSERT INTO `Ingredient` (Ingredient_name, Quantity, Low_stock_threshold, Updated_at) VALUES (?, ?, ?, NOW())",
-          [name, quantity, threshold]
+          [name, quantityGrams, threshold]
         );
         Ingredient_id = result.insertId;
       }
@@ -395,7 +407,7 @@ const AddMultipleIngredients = async (req, res) => {
       const Batch_code = Date.now();
       await db.query(
         "INSERT INTO `Ingredient_item` (Ingredient_id, Batch_code, Quantity, Purchase_Price, Expiry_date, Create_at) VALUES (?, ?, ?, ?, ?, NOW())",
-        [Ingredient_id, Batch_code, quantity, price, expiry_date]
+        [Ingredient_id, Batch_code, quantityGrams, price, expiry_date]
       );
 
       // ✅ อัปเดต Quantity ใน Ingredient
