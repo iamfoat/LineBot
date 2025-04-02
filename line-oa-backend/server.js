@@ -26,6 +26,9 @@ const cloudinary = require("cloudinary").v2;
 const paymentroutes = require("./routes/PaymentRoutes");
 const { verifySlip, CashPayment } = require("./controllers/PaymentControllers");
 
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require('swagger-jsdoc');
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
@@ -38,6 +41,25 @@ app.use("/api", ingredientItemRoutes);
 app.use("/api", Dashboard);
 app.use("/api", ingredient2);
 app.use("/api", paymentroutes);
+
+const swaggerOptions = {
+  definition: {
+      openapi: "3.0.0",
+      info: {
+          title: "API doc",
+          version: "1.0.0",
+          description: "API documents",
+      },
+      servers: [
+          {
+              usl: "http://localhost:8000/",
+          },
+      ],
+  },
+  apis: ["./routes/*.js"], // เส้นทางไปยัง route files
+};
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 const config = {
   channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
@@ -116,14 +138,14 @@ app.post("/webhook", async (req, res) => {
         console.log(`✅ บันทึก ${customerId} ลงฐานข้อมูลเรียบร้อย`);
         console.log(customerText);
 
-        // if (
-        //   customerText.includes("สวัสดี") ||
-        //   customerText.includes("เมนู") ||
-        //   customerText.includes("สั่งซื้อ")
-        // ) {
-        //   // ส่งเมนูกลับไป
-        //   await sendMenuToLine(customerId); // เรียกฟังก์ชันเพื่อส่งเมนู
-        // }
+        if (
+          customerText.includes("สวัสดี") ||
+          customerText.includes("เมนู") ||
+          customerText.includes("สั่งซื้อ")
+        ) {
+          // ส่งเมนูกลับไป
+          await sendMenuToLine(customerId); // เรียกฟังก์ชันเพื่อส่งเมนู
+        }
 
         // ✅ 2. เรียก Model วิเคราะห์คำสั่งซื้อ
         const modelPath = path.join(__dirname, ".", "Model", "NLP.py");
