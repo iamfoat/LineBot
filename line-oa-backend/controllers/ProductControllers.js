@@ -37,7 +37,7 @@ const createProduct = async (req, res) => {
     const { productName, price, description, ingredients } = req.body;
     const productImg = req.file ? req.file.filename : null;
 
-    if (!productName || !price || !ingredients) {
+    if (!productName || !price ) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 

@@ -18,7 +18,7 @@ const mysql = require('mysql2/promise');
 
 // การตั้งค่าการเชื่อมต่อ
 const db = mysql.createPool({
-    host: 'localhost',
+    host: 'db',
     user: 'root',
     password: 'root',
     database: 'Linebot',
