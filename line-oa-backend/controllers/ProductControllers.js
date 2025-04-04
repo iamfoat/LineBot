@@ -173,20 +173,20 @@ const generateFlexMenu = (products) => {
           size: "sm",
         },
         // ปุ่มสั่งซื้อ
-        {
-          type: "button",
-          style: "primary",
-          color: "#1DB446",
-          action: {
-            type: "postback",
-            label: "สั่งซื้อ",
-            data: JSON.stringify({
-              action: "start_order",
-              product_id: product.Product_id,
-              menu: product.Product_name,
-            }),
-          },
-        },
+        // {
+        //   type: "button",
+        //   style: "primary",
+        //   color: "#1DB446",
+        //   action: {
+        //     type: "postback",
+        //     label: "สั่งซื้อ",
+        //     data: JSON.stringify({
+        //       action: "start_order",
+        //       product_id: product.Product_id,
+        //       menu: product.Product_name,
+        //     }),
+        //   },
+        // },
       ],
     },
   }));
@@ -197,103 +197,103 @@ const generateFlexMenu = (products) => {
   };
 };
 
-// const sendMenuToLine = async (req = null, res = null) => {
-//     try {
-//         const [products] = await db.query("SELECT * FROM Product");
-
-//         if (products.length === 0) {
-//             return res.status(400).json({ error: "ไม่มีสินค้าที่จะส่ง!" });
-//         }
-
-//         const [recipients] = await db.query("SELECT Customer_id FROM Customer");
-
-//         const flexMenu = generateFlexMenu(products);
-//         console.log("ส่ง Flex Message ไปที่ LINE:", JSON.stringify(flexMenu, null, 2));
-//         console.log("Flex Message Payload:", JSON.stringify(flexMenu, null, 2));
-
-//         const headers = {
-//             "Content-Type": "application/json",
-//             "Authorization": `Bearer ${config.channelAccessToken}`,
-//         };
-
-//         for (let recipient of recipients) {
-//             const body = {
-//                 to: recipient.Customer_id, //ใช้ค่าจาก `Customer_id`
-//                 messages: [{ type: "flex", altText: "ร้านเปิดแล้วค่าา มาสั่งกันเร็วว!", contents: flexMenu }]
-//             };
-
-//             try {
-//                 const response = await axios.post("https://api.line.me/v2/bot/message/push", body, { headers });
-//                 console.log(`ส่งสำเร็จไปยัง: ${recipient.Customer_id}`, response.data);
-//             } catch (error) {
-//                 console.error(`Error ส่งไปยัง ${recipient.Customer_id}:`, error.response ? error.response.data : error);
-//             }
-//         }
-
-//         res.json({ status: "success", message: "ส่งเมนูไปที่ LINE แล้ว!" });
-//     } catch (error) {
-//         console.error("Error sending menu:", error.response ? error.response.data : error);
-//         res.status(500).json({ error: "Failed to send menu" });
-//     }
-// };
-
 const sendMenuToLine = async (req = null, res = null) => {
-  try {
-    const [products] = await db.query("SELECT * FROM Product");
-
-    if (products.length === 0) {
-      return res.status(400).json({ error: "ไม่มีสินค้าที่จะส่ง!" });
-    }
-
-    // ส่งเมนูไปให้ Customer_id ที่กำหนด (ในที่นี้คือ Uf12c1e1510a471503437906158e75d39)
-    const recipientId = "Uf12c1e1510a471503437906158e75d39";
-
-    const flexMenu = generateFlexMenu(products);
-    console.log(
-      "ส่ง Flex Message ไปที่ LINE:",
-      JSON.stringify(flexMenu, null, 2)
-    );
-    console.log("Flex Message Payload:", JSON.stringify(flexMenu, null, 2));
-
-    const headers = {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${config.channelAccessToken}`,
-    };
-
-    const body = {
-      to: recipientId, // ส่งไปยัง Customer_id ที่ต้องการ
-      messages: [
-        {
-          type: "flex",
-          altText: "ร้านเปิดแล้วค่าา มาสั่งกันเร็วว!",
-          contents: flexMenu,
-        },
-      ],
-    };
-
     try {
-      const response = await axios.post(
-        "https://api.line.me/v2/bot/message/push",
-        body,
-        { headers }
-      );
-      console.log(`ส่งสำเร็จไปยัง: ${recipientId}`, response.data);
-    } catch (error) {
-      console.error(
-        `Error ส่งไปยัง ${recipientId}:`,
-        error.response ? error.response.data : error
-      );
-    }
+        const [products] = await db.query("SELECT * FROM Product");
 
-    // res.json({ status: "success", message: "ส่งเมนูไปที่ LINE แล้ว!" });
-  } catch (error) {
-    console.error(
-      "Error sending menu:",
-      error.response ? error.response.data : error
-    );
-    res.status(500).json({ error: "Failed to send menu" });
-  }
+        if (products.length === 0) {
+            return res.status(400).json({ error: "ไม่มีสินค้าที่จะส่ง!" });
+        }
+
+        const [recipients] = await db.query("SELECT Customer_id FROM Customer");
+
+        const flexMenu = generateFlexMenu(products);
+        console.log("ส่ง Flex Message ไปที่ LINE:", JSON.stringify(flexMenu, null, 2));
+        console.log("Flex Message Payload:", JSON.stringify(flexMenu, null, 2));
+
+        const headers = {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${config.channelAccessToken}`,
+        };
+
+        for (let recipient of recipients) {
+            const body = {
+                to: recipient.Customer_id, //ใช้ค่าจาก `Customer_id`
+                messages: [{ type: "flex", altText: "ร้านเปิดแล้วค่าา มาสั่งกันเร็วว!", contents: flexMenu }]
+            };
+
+            try {
+                const response = await axios.post("https://api.line.me/v2/bot/message/push", body, { headers });
+                console.log(`ส่งสำเร็จไปยัง: ${recipient.Customer_id}`, response.data);
+            } catch (error) {
+                console.error(`Error ส่งไปยัง ${recipient.Customer_id}:`, error.response ? error.response.data : error);
+            }
+        }
+
+        res.json({ status: "success", message: "ส่งเมนูไปที่ LINE แล้ว!" });
+    } catch (error) {
+        console.error("Error sending menu:", error.response ? error.response.data : error);
+        res.status(500).json({ error: "Failed to send menu" });
+    }
 };
+
+// const sendMenuToLine = async (req = null, res = null) => {
+//   try {
+//     const [products] = await db.query("SELECT * FROM Product");
+
+//     if (products.length === 0) {
+//       return res.status(400).json({ error: "ไม่มีสินค้าที่จะส่ง!" });
+//     }
+
+//     // ส่งเมนูไปให้ Customer_id ที่กำหนด (ในที่นี้คือ Uf12c1e1510a471503437906158e75d39)
+//     const recipientId = "Uf12c1e1510a471503437906158e75d39";
+
+//     const flexMenu = generateFlexMenu(products);
+//     console.log(
+//       "ส่ง Flex Message ไปที่ LINE:",
+//       JSON.stringify(flexMenu, null, 2)
+//     );
+//     console.log("Flex Message Payload:", JSON.stringify(flexMenu, null, 2));
+
+//     const headers = {
+//       "Content-Type": "application/json",
+//       Authorization: `Bearer ${config.channelAccessToken}`,
+//     };
+
+//     const body = {
+//       to: recipientId, // ส่งไปยัง Customer_id ที่ต้องการ
+//       messages: [
+//         {
+//           type: "flex",
+//           altText: "ร้านเปิดแล้วค่าา มาสั่งกันเร็วว!",
+//           contents: flexMenu,
+//         },
+//       ],
+//     };
+
+//     try {
+//       const response = await axios.post(
+//         "https://api.line.me/v2/bot/message/push",
+//         body,
+//         { headers }
+//       );
+//       console.log(`ส่งสำเร็จไปยัง: ${recipientId}`, response.data);
+//     } catch (error) {
+//       console.error(
+//         `Error ส่งไปยัง ${recipientId}:`,
+//         error.response ? error.response.data : error
+//       );
+//     }
+
+//     // res.json({ status: "success", message: "ส่งเมนูไปที่ LINE แล้ว!" });
+//   } catch (error) {
+//     console.error(
+//       "Error sending menu:",
+//       error.response ? error.response.data : error
+//     );
+//     res.status(500).json({ error: "Failed to send menu" });
+//   }
+// };
 
 module.exports = {
   getProducts,
