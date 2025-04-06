@@ -7,11 +7,12 @@ WORKDIR /app
 # คัดลอก package.json และ lock file เข้าไป
 COPY package*.json ./
 
+COPY . .
+
 # ติดตั้ง dependencies
 RUN npm install
 
 # คัดลอกไฟล์ทั้งหมดใน project เข้าไปใน container
-COPY . .
 
 RUN apt-get update && \
     apt-get install -y python3 python3-pip && \
