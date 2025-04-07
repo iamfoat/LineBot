@@ -65,7 +65,6 @@ const CreateIngredient = async (req, res) => {
         "UPDATE Ingredient SET Quantity = (SELECT COALESCE(SUM(Quantity), 0) FROM Ingredient_item WHERE Ingredient_id = ?), Updated_at = NOW() WHERE Ingredient_id = ?",
         [Ingredient_id, Ingredient_id]
       );
-      
     } else {
       // ✅ เพิ่ม `Ingredient` ใหม่
       const [result] = await db.query(
@@ -105,7 +104,6 @@ const storage = multer.diskStorage({
 });
 
 const ingredientUploader = multer({ storage: multer.memoryStorage() });
-const expiryDate = moment().add(5, "days").format("YYYY-MM-DD");
 
 const analyzeIngredientSlip = async (req, res) => {
   try {
@@ -127,7 +125,7 @@ const analyzeIngredientSlip = async (req, res) => {
     const receiptImg = uploadResult.secure_url;
 
     // 2️⃣ Analyze with Gemini
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); 
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const result = await model.generateContent([
       {
         text: `คุณคือระบบ OCR สำหรับใบเสร็จ Makro
@@ -182,9 +180,12 @@ const analyzeIngredientSlip = async (req, res) => {
         raw: ocrText,
       });
     }
+    const generateBatchCode = () =>
+      `Lot-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
     // 3️⃣ Insert items to Ingredient_item
     for (const item of json.items) {
+      const batchCode = generateBatchCode();
       const [ingredient] = await db.query(
         "SELECT Ingredient_id FROM Ingredient WHERE Ingredient_name = ?",
         [item.name]
@@ -196,14 +197,16 @@ const analyzeIngredientSlip = async (req, res) => {
         item.expiry_date || moment().add(5, "days").format("YYYY-MM-DD");
 
       await db.query(
-        `INSERT INTO Ingredient_item (Ingredient_id, quantity, purchase_price, expiry_date, receipt_img)
-           VALUES (?, ?, ?, ?, ?)`,
+        `INSERT INTO Ingredient_item (Ingredient_id, Batch_code, quantity, purchase_price, expiry_date, receipt_img, , Create_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
           ingredient[0].Ingredient_id,
+          batchCode,
           item.quantity,
           item.price,
           expiryDate,
           receiptImg,
+          new Date(),
         ]
       );
 
@@ -226,9 +229,12 @@ const analyzeIngredientSlip = async (req, res) => {
 
 const confirmOcrInsertToDB = async (req, res) => {
   const { items, receipt_img } = req.body;
+  const generateBatchCode = () =>
+    `Lot-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
   try {
     for (const item of items) {
+      const batchCode = generateBatchCode();
       let ingredientId;
 
       // 🔍 1. ตรวจสอบชื่อวัตถุดิบ
@@ -255,8 +261,6 @@ const confirmOcrInsertToDB = async (req, res) => {
       const expiryDate =
         item.expiry_date || moment().add(5, "days").format("YYYY-MM-DD");
 
-      const batchCode = `Lot-${Date.now()}`;
-
       const quantityGrams = item.quantity * 1000;
 
       await db.query(
@@ -265,7 +269,7 @@ const confirmOcrInsertToDB = async (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?)`,
         [
           ingredientId,
-          quantityGrams,  
+          quantityGrams,
           item.price,
           expiryDate,
           receipt_img,
@@ -276,7 +280,7 @@ const confirmOcrInsertToDB = async (req, res) => {
       // 🔄 4. อัปเดต stock
       await db.query(
         "UPDATE Ingredient SET Quantity = Quantity + ?, Updated_at = NOW() WHERE Ingredient_id = ?",
-        [quantityGrams, ingredientId] 
+        [quantityGrams, ingredientId]
       );
     }
 
